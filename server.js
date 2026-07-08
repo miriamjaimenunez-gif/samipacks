@@ -7,7 +7,11 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// El límite por defecto de Express es 100kb, muy poco para una foto
+// convertida a base64 (subida desde "Publicar" con la opción "Subir foto").
+// Lo subimos a 10mb para dar margen de sobra sin abrir la puerta a
+// peticiones absurdamente grandes.
+app.use(express.json({ limit: '10mb' }));
 
 // Sirve el frontend (index.html, styles.css, app.js) directamente desde
 // este mismo servidor, así todo queda en una sola URL y no hay problemas
