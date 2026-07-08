@@ -958,10 +958,24 @@
               <input type="text" id="adminDescription" placeholder="¿Qué contiene el pack sorpresa?" required />
             </label>
 
-            <label class="input-group">
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <button type="button" class="secondary-button active-toggle" id="adminImageModeUrlBtn" style="flex:1; padding:10px; font-size:13px;">Pegar URL</button>
+              <button type="button" class="secondary-button" id="adminImageModeFileBtn" style="flex:1; padding:10px; font-size:13px;">Subir foto</button>
+            </div>
+
+            <label class="input-group" id="adminImageUrlGroup">
               <span class="material-icons">link</span>
-              <input type="url" id="adminImage" placeholder="URL de la imagen del producto (Unsplash / Web)" required />
+              <input type="url" id="adminImageUrlInput" placeholder="URL de la imagen del producto (Unsplash / Web)" />
             </label>
+
+            <label class="input-group" id="adminImageFileGroup" style="display:none;">
+              <span class="material-icons">image</span>
+              <input type="file" id="adminImageFileInput" accept="image/*" />
+            </label>
+
+            <img id="adminImagePreview" src="" alt="Vista previa de la imagen" style="display:none; width:100%; max-height:160px; object-fit:cover; border-radius:12px; margin-bottom:12px;" />
+
+            <input type="hidden" id="adminImage" value="" />
 
             <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
               <label class="input-group">

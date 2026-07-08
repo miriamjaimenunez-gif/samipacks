@@ -1583,6 +1583,12 @@ body.dark-theme .reserve-bar {
   font-size: 13px;
 }
 
+.secondary-button.active-toggle {
+  background: var(--green);
+  color: var(--white);
+  border-color: var(--green);
+}
+
 .ticket-subactions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .screen-header h3 { font-size: 20px; }

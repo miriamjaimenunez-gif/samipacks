@@ -1212,13 +1212,111 @@ async function registrarReservaEnBaseDatos(pack) {
     }
   }
 
+  // ---- Selector de imagen: pegar URL o subir foto desde el dispositivo ----
+  // Ambos modos terminan escribiendo el mismo valor en el input oculto
+  // #adminImage, que es lo único que lee el envío del formulario (línea de
+  // más abajo con "payload.image"). Así no hace falta tocar el backend:
+  // si es una URL normal, se guarda tal cual; si es una foto subida, se
+  // guarda como "data:image/jpeg;base64,..." en el mismo campo de texto.
+  const adminImageInput = document.getElementById('adminImage');
+  const adminImageUrlInput = document.getElementById('adminImageUrlInput');
+  const adminImageFileInput = document.getElementById('adminImageFileInput');
+  const adminImageUrlGroup = document.getElementById('adminImageUrlGroup');
+  const adminImageFileGroup = document.getElementById('adminImageFileGroup');
+  const adminImageModeUrlBtn = document.getElementById('adminImageModeUrlBtn');
+  const adminImageModeFileBtn = document.getElementById('adminImageModeFileBtn');
+  const adminImagePreview = document.getElementById('adminImagePreview');
+
+  function mostrarVistaPreviaImagen(valor) {
+    if (adminImagePreview) {
+      if (valor) {
+        adminImagePreview.src = valor;
+        adminImagePreview.style.display = 'block';
+      } else {
+        adminImagePreview.src = '';
+        adminImagePreview.style.display = 'none';
+      }
+    }
+  }
+
+  function setAdminImageValue(valor, { comoArchivo = false } = {}) {
+    if (adminImageInput) adminImageInput.value = valor || '';
+    mostrarVistaPreviaImagen(valor);
+    if (!comoArchivo && adminImageUrlInput) adminImageUrlInput.value = valor || '';
+  }
+
+  function cambiarModoImagen(modo) {
+    const esUrl = modo === 'url';
+    if (adminImageUrlGroup) adminImageUrlGroup.style.display = esUrl ? 'flex' : 'none';
+    if (adminImageFileGroup) adminImageFileGroup.style.display = esUrl ? 'none' : 'flex';
+    if (adminImageModeUrlBtn) adminImageModeUrlBtn.classList.toggle('active-toggle', esUrl);
+    if (adminImageModeFileBtn) adminImageModeFileBtn.classList.toggle('active-toggle', !esUrl);
+  }
+
+  if (adminImageModeUrlBtn) {
+    adminImageModeUrlBtn.addEventListener('click', () => cambiarModoImagen('url'));
+  }
+  if (adminImageModeFileBtn) {
+    adminImageModeFileBtn.addEventListener('click', () => cambiarModoImagen('file'));
+  }
+  if (adminImageUrlInput) {
+    adminImageUrlInput.addEventListener('input', () => {
+      setAdminImageValue(adminImageUrlInput.value.trim());
+    });
+  }
+
+  // Reduce el tamaño de la foto antes de convertirla a base64 (una foto de
+  // celular sin comprimir puede pesar varios MB; así queda liviana para
+  // guardarse en la base de datos y cargar rápido en la app).
+  function comprimirImagenArchivo(archivo) {
+    return new Promise((resolve, reject) => {
+      const lector = new FileReader();
+      lector.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxAncho = 900;
+          const escala = Math.min(1, maxAncho / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * escala);
+          canvas.height = Math.round(img.height * escala);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+        img.src = e.target.result;
+      };
+      lector.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+      lector.readAsDataURL(archivo);
+    });
+  }
+
+  if (adminImageFileInput) {
+    adminImageFileInput.addEventListener('change', async () => {
+      const archivo = adminImageFileInput.files && adminImageFileInput.files[0];
+      if (!archivo) return;
+      if (!archivo.type.startsWith('image/')) {
+        alert('Selecciona un archivo de imagen (jpg, png, etc.).');
+        return;
+      }
+      try {
+        const dataUrl = await comprimirImagenArchivo(archivo);
+        setAdminImageValue(dataUrl, { comoArchivo: true });
+      } catch (err) {
+        console.error('Error comprimiendo imagen:', err);
+        alert('No se pudo procesar esa imagen. Intenta con otra.');
+      }
+    });
+  }
+
   function iniciarEdicionSamipack(pack) {
     document.getElementById('adminEditingId').value = pack.id;
     document.getElementById('adminBusinessName').value = pack.business || (usuarioLogueado ? usuarioLogueado.negocio : '') || '';
     document.getElementById('adminProductName').value = pack.producto || '';
     document.getElementById('adminCategory').value = pack.category || '';
     document.getElementById('adminDescription').value = pack.description || '';
-    document.getElementById('adminImage').value = pack.image || '';
+    setAdminImageValue(pack.image || '');
+    cambiarModoImagen('url');
     document.getElementById('adminOriginalPrice').value = pack.originalPrice;
     document.getElementById('adminFinalPrice').value = pack.finalPrice;
     document.getElementById('adminRemaining').value = pack.remainingPacks;
@@ -1335,6 +1433,8 @@ async function registrarReservaEnBaseDatos(pack) {
   function cancelarEdicionSamipack() {
     document.getElementById('adminProductForm').reset();
     document.getElementById('adminEditingId').value = '';
+    setAdminImageValue('');
+    cambiarModoImagen('url');
     const adminBusinessNameInput = document.getElementById('adminBusinessName');
     if (adminBusinessNameInput) adminBusinessNameInput.value = (usuarioLogueado && usuarioLogueado.negocio) || '';
     const titulo = document.getElementById('adminFormTitulo');
@@ -1386,6 +1486,12 @@ async function registrarReservaEnBaseDatos(pack) {
     // se publica igual solo con la dirección escrita; la distancia en el
     // Home del cliente simplemente no se podrá calcular para ese SamiPack.
     const coordinatesValue = document.getElementById('adminCoordinates').value.trim();
+
+    const imagenValor = document.getElementById('adminImage').value.trim();
+    if (!imagenValor) {
+      alert('Agrega una imagen del producto: pega una URL o sube una foto desde tu dispositivo.');
+      return;
+    }
 
     const payload = {
       business: usuarioLogueado.negocio,
