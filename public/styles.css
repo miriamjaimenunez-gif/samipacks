@@ -1,0 +1,2188 @@
+:root {
+  --green: #4CAF50;
+  --orange: #FF9800;
+  --white: #FFFFFF;
+  --light-gray: #F5F5F5;
+  --text: #2f2f2f;
+  --border: #e9e9e9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background: linear-gradient(135deg, var(--light-gray), #eef7ee);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+/* ==========================================================================
+   ESTANDARIZACIÓN DE TAMAÑO MÓVIL ESTRICTO (.app-shell)
+   ========================================================================== */
+
+.app-shell {
+  width: 100%;
+  max-width: 412px;     /* Ancho estricto de smartphone moderno */
+  height: 90vh;         /* Altura fija simulada */
+  max-height: 844px;
+  margin: 0 auto;
+  position: relative;   /* Bloque contenedor para posiciones absolutas internas */
+  background-color: #ffffff;
+  border-radius: 32px;  
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;     /* Bloquea desbordamientos horizontales o verticales externos */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Asegurar que cada sección de pantalla se acople de forma exacta al molde del smartphone */
+.pantalla, 
+.splash-screen, 
+.login-screen,
+.home-screen,
+.detail-screen, 
+.confirmation-screen, 
+.ticket-screen, 
+.reservations-screen, 
+.profile-screen, 
+.history-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;     /* Activa scroll vertical individual para cada sección si el contenido es largo */
+  overflow-x: hidden;   /* Prohíbe scrolls laterales */
+  box-sizing: border-box;
+  padding: 24px 16px 140px; /* Colchón inferior para que nada quede tapado por los menús fijos */
+  background: #ffffff;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  
+  /* Estado por defecto: completamente ocultas */
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Forzar estados de despliegue mediante clases inyectadas en el appShell por JavaScript */
+.app-shell.show-login .login-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-home .home-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-detail .detail-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-confirmation .confirmation-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-ticket .ticket-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-reservations .reservations-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-profile .profile-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+.app-shell.show-history .history-screen { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 5; }
+
+/* Configuración especial para que la Splash Screen inicie visible y muera al cambiar de clase */
+.splash-screen { 
+  opacity: 1; 
+  transform: translateY(0);
+  pointer-events: auto;
+  z-index: 10; 
+  display: grid;
+  place-items: center;
+}
+.app-shell.show-login .splash-screen {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.96);
+}
+
+/* Limpieza de selectores repetidores */
+.splash-screen, .login-screen, .home-screen {
+  min-height: auto;
+}
+
+/* Uniformidad de imágenes y elementos embebidos */
+.pack-image, #detailImage, iframe, .map-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   NAVBAR INFERIOR UNIFICADO Y FIJO AL SMARTPHONE
+   ========================================================================== */
+
+.bottom-nav {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 64px;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid #f0f0f0;
+  display: flex !important;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px;
+  z-index: 1000;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* 🔒 Estado oculto real del navbar (antes, un style.display inline desde JS
+   no podía ganarle al !important de arriba y el navbar seguía visible en
+   la pantalla de login). Se activa/desactiva vía clase, no vía estilo
+   inline, para que sí tenga prioridad sobre la regla de arriba. */
+.bottom-nav.nav-oculto {
+  display: none !important;
+}
+
+.nav-item {
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #8c8c8c;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.nav-item.active {
+  color: var(--green);
+}
+
+/* ==========================================================================
+   COMPONENTES DE DISEÑO INTERNO (Splash, Login, Cards)
+   ========================================================================== */
+
+.splash-card,
+.login-card {
+  width: 100%;
+  background: var(--white);
+  padding: 12px 4px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.splash-card {
+  text-align: center;
+}
+
+.logo-badge {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), #66bb6a);
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  box-shadow: 0 12px 24px rgba(76, 175, 80, 0.28);
+}
+
+.logo-badge.small {
+  width: 54px;
+  height: 54px;
+  margin: 0;
+}
+
+.logo-badge .material-icons {
+  font-size: 48px;
+}
+
+.logo-badge.small .material-icons {
+  font-size: 28px;
+}
+
+.tagline {
+  margin: 10px 0 24px;
+  font-size: 16px;
+  color: #6b6b6b;
+}
+
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.brand-header h2 {
+  font-size: 22px;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.illustration-card {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 14px;
+}
+
+.illustration-circle {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f7f1e8, #f2f2f2);
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  box-shadow: inset 0 0 0 6px rgba(76, 175, 80, 0.05);
+}
+
+.illustration-circle svg {
+  width: 100%;
+  height: 100%;
+}
+
+.login-card h3 {
+  text-align: center;
+  margin: 2px 0 0;
+}
+
+.welcome-text {
+  margin: 4px 0 20px;
+  color: #6b6b6b;
+  line-height: 1.5;
+  font-size: 14px;
+  text-align: center;
+}
+
+.login-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 14px;
+  background: #fbfbfb;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-group:focus-within {
+  border-color: var(--green);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12);
+}
+
+.input-group.input-error {
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
+}
+
+.input-group .material-icons {
+  color: #8e8e8e;
+  font-size: 20px;
+}
+
+.input-group:focus-within .material-icons {
+  color: var(--green);
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px; /* Nunca menos de 16px: evita el auto-zoom al enfocar en móviles */
+  color: var(--text);
+}
+
+.input-group select {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: var(--text);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.input-group input[readonly] {
+  color: #8c8c8c;
+  cursor: not-allowed;
+}
+
+.password-group {
+  position: relative;
+}
+
+.icon-button {
+  border: none;
+  background: transparent;
+  color: #8e8e8e;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.icon-button:hover {
+  color: var(--green);
+}
+
+.field-error {
+  color: #e53935;
+  font-size: 12px;
+  margin: -6px 0 0 4px;
+}
+
+.forgot-link {
+  text-align: right;
+  color: var(--green);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.primary-button {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--green);
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(76, 175, 80, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  margin-top: 2px;
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(76, 175, 80, 0.24);
+}
+
+.primary-button:active {
+  transform: translateY(0);
+}
+
+.primary-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primary-button .btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.signup-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  color: #616161;
+  font-size: 14px;
+}
+
+.signup-link a {
+  color: var(--green);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #8e8e8e;
+  margin: 14px 0 10px;
+}
+
+.separator::before,
+.separator::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.separator span {
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.social-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.social-btn {
+  border: 1px solid var(--border);
+  background: var(--white);
+  border-radius: 14px;
+  padding: 12px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #3f3f3f;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.social-btn:hover {
+  border-color: #d5d5d5;
+  background: #fafafa;
+  transform: translateY(-1px);
+}
+
+.social-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.social-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.btn-google .social-logo {
+  background: #f1f1f1;
+  color: #db4437;
+}
+
+.btn-facebook .social-logo {
+  background: #eef4ff;
+  color: #1877f2;
+}
+
+/* ==========================================================================
+   MODAL DE AUTENTICACIÓN SOCIAL (simulación de selector de cuenta)
+   ========================================================================== */
+
+.auth-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 22, 20, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  padding: 0;
+}
+
+.auth-modal-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.auth-modal-card {
+  width: 100%;
+  max-height: 88%;
+  background: var(--white);
+  border-radius: 24px 24px 0 0;
+  padding: 22px 20px 24px;
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.2);
+  transform: translateY(24px);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.auth-modal-overlay.is-open .auth-modal-card {
+  transform: translateY(0);
+}
+
+.auth-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.auth-modal-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-modal-brand .social-logo {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+}
+
+.auth-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.auth-modal-subtitle {
+  font-size: 13px;
+  color: #6b6b6b;
+  margin: 2px 0 18px;
+}
+
+.auth-modal-close {
+  border: none;
+  background: #f2f2f2;
+  color: #6b6b6b;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.auth-modal-close:hover {
+  background: #e6e6e6;
+}
+
+.auth-account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.auth-account-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 10px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.auth-account-item:hover {
+  background: #f5f5f5;
+}
+
+.auth-account-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--green), #66bb6a);
+}
+
+.auth-account-item.is-new .auth-account-avatar {
+  background: #f1f1f1;
+  color: #6b6b6b;
+}
+
+.auth-account-info {
+  min-width: 0;
+}
+
+.auth-account-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-account-email {
+  font-size: 12.5px;
+  color: #7a7a7a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-modal-footer-note {
+  font-size: 11.5px;
+  color: #9a9a9a;
+  line-height: 1.5;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.auth-new-account-form {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.auth-new-account-form.is-open {
+  display: flex;
+}
+
+.auth-account-list.is-hidden {
+  display: none;
+}
+
+.auth-back-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.auth-back-btn {
+  border: none;
+  background: #f2f2f2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #4a4a4a;
+}
+
+.auth-back-btn:hover {
+  background: #e6e6e6;
+}
+
+.auth-fb-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  padding: 6px 0 4px;
+}
+
+.auth-fb-confirm .auth-account-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.auth-fb-confirm-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.auth-fb-confirm-email {
+  font-size: 13px;
+  color: #7a7a7a;
+  margin-bottom: 18px;
+}
+
+.auth-fb-continue-btn {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 13px 16px;
+  background: #1877f2;
+  color: var(--white);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.auth-fb-continue-btn:hover {
+  background: #1667d1;
+}
+
+.auth-fb-switch-link {
+  background: none;
+  border: none;
+  color: #1877f2;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.auth-fb-switch-link:hover {
+  text-decoration: underline;
+}
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10; /* Aumentamos el z-index para que las tarjetas pasen por debajo */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0 12px;
+  background: #ffffff; /* Evita que las tarjetas se trasluzcan al hacer scroll */
+}
+
+/* Forzar que mantenga el fondo oscuro correcto al hacer scroll en Dark Mode */
+body.dark-theme .top-bar {
+  background: #121212 !important; 
+}
+
+.location-pill,
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--light-gray);
+  border-radius: 999px;
+  padding: 10px 12px;
+  color: #4a4a4a;
+}
+
+.location-pill {
+  font-weight: 600;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.location-pill:hover,
+.location-pill:focus-visible {
+  background: #ebebeb;
+}
+
+.location-pill:active {
+  background: #e2e2e2;
+}
+
+.search-bar {
+  flex: 1;
+  min-width: 140px;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 16px; /* Evita el auto-zoom al enfocar en móviles */
+}
+
+.category-section {
+  margin-top: 10px;
+  padding-bottom: 8px;
+}
+
+.category-carousel {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.category-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.category-row {
+  display: flex;
+  gap: 8px;
+  min-width: max-content;
+}
+
+.category-btn {
+  border: none;
+  border-radius: 999px;
+  background: #f4f4f4;
+  color: #5f5f5f;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.category-btn.active {
+  background: var(--green);
+  color: var(--white);
+  box-shadow: 0 6px 12px rgba(76, 175, 80, 0.15);
+}
+
+.filter-shell {
+  margin-top: 10px;
+}
+
+.filters-toggle {
+  border: none;
+  background: #fff;
+  color: var(--green);
+  border: 1px solid #dfeee0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.filter-row.is-open {
+  max-height: 180px;
+  opacity: 1;
+  pointer-events: auto;
+  margin-top: 10px;
+}
+
+.filter-chip {
+  border: none;
+  border-radius: 999px;
+  background: #f4f4f4;
+  color: #5f5f5f;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.filter-chip.active {
+  background: var(--green);
+  color: var(--white);
+}
+
+.results-header {
+  margin: 14px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.results-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.results-header p {
+  margin-top: 2px;
+  color: #757575;
+  font-size: 12px;
+}
+
+.clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: #e8f5e9;
+  color: var(--green);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cards-list {
+  display: grid;
+  grid-auto-rows: max-content !important;
+  gap: 16px;
+  flex: 1 !important;        /* Ocupa todo el espacio disponible inferior */
+  overflow-y: auto !important; /* ¡CRÍTICO! Activa el scroll únicamente en este bloque */
+  align-content: start !important;
+  min-height: 0 !important;
+  padding-top: 12px !important;
+  padding-bottom: 140px !important; /* Colchón para que las últimas tarjetas liberen el menú inferior */
+}
+
+.pack-card {
+  background: var(--white);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+  border: 1px solid #fbfbfb;
+  position: relative; /* ¡CRÍTICO! Permite al timer dinámico flotar sobre la imagen del pack */
+}
+
+.pack-image {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.pack-content {
+  padding: 12px;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.card-top-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.card-top h4 {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1a1a1a;
+}
+
+.pack-business-name {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin: 0;
+  font-weight: 500;
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #fb8c00;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.pack-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #8c8c8c;
+  font-size: 12px;
+  margin: 4px 0 0;
+}
+
+.pack-meta-row .material-icons {
+  font-size: 14px;
+  color: #a8a8a8;
+}
+
+.pack-meta-row .meta-dot {
+  margin: 0 3px;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.old-price {
+  color: #9e9e9e;
+  text-decoration: line-through;
+  font-size: 13px;
+}
+
+.new-price {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.reserve-btn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  background: var(--green);
+  color: var(--white);
+  padding: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   STOCK VISIBLE EN LA TARJETA + ESTADO AGOTADO
+   ========================================================================== */
+.stock-pill {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--white);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.stock-pill .material-icons {
+  font-size: 13px;
+}
+
+/* Cuando quedan pocos packs, resalta en naranja para generar urgencia */
+.stock-pill.low-stock {
+  background: var(--orange);
+}
+
+/* Cuando ya no queda nada, resalta en rojo */
+.stock-pill.sold-out-pill {
+  background: #c62828;
+}
+
+/* La tarjeta completa se atenúa cuando el pack está agotado */
+.pack-card.sold-out .pack-image {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.pack-card.sold-out .card-top h4,
+.pack-card.sold-out .new-price,
+.pack-card.sold-out .old-price {
+  opacity: 0.55;
+}
+
+.reserve-btn:disabled {
+  background: #bdbdbd !important;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   VISTA DE DETALLES Y FLUJO DE COMPRA
+   ========================================================================== */
+
+.detail-hero {
+  position: relative;
+  height: 240px;
+}
+
+.detail-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-actions {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.circle-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.96);
+  color: #3f3f3f;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.detail-card {
+  position: relative;
+  z-index: 2;
+  margin: -24px 0 0;
+  background: var(--white);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 16px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-title-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-title-block h3 {
+  font-size: 23px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+
+.detail-business-name {
+  font-size: 13px;
+  color: #8c8c8c;
+  margin: 0;
+  font-weight: 500;
+}
+
+.detail-title-block .rating {
+  font-size: 13px;
+}
+
+.detail-tag {
+  background: #fff4e5;
+  color: #b96a00;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.detail-tag.sold-out-tag {
+  background: #fdecea;
+  color: #c62828;
+}
+
+.detail-section {
+  margin-top: 14px;
+}
+
+.detail-section h4 {
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.detail-section p {
+  color: #616161;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.detail-price-card {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fff8ef 0%, #fef2df 100%);
+  border: 1px solid #ffe2bb;
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.new-price {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.savings-pill {
+  background: #fff2e5;
+  color: #9a4a00;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid #ffd3a8;
+}
+
+.detail-row {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: #5b5b5b;
+  font-size: 13px;
+}
+
+.detail-impact {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e8f5e9;
+  color: var(--green);
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.detail-map {
+  margin-top: 14px;
+}
+
+.map-card {
+  border: 1px solid #f5f5f5;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.map-card iframe {
+  height: 140px;
+  border: 0;
+  display: block;
+}
+
+.map-info {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.map-location p {
+  font-weight: 700;
+}
+
+.map-location span {
+  color: #8e8e8e;
+  font-size: 11px;
+}
+
+.map-link {
+  border: 1px solid #ececec;
+  color: #1f1f1f;
+  border-radius: 999px;
+  padding: 6px 10px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Barra flotante del botón de Reserva */
+.reserve-bar {
+  position: relative !important;
+  left: 0 !important;
+  transform: none !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  
+  /* 🌟 CORRECCIÓN CRÍTICA: Empuja la barra hacia arriba para que libre el menú inferior */
+  margin-bottom: 64px !important; 
+  
+  padding: 12px 16px 16px !important;
+  background: rgba(255, 255, 255, 0.98);
+  border-top: 1px solid #f0f0f0;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+/* Mantener el acople perfecto del tema nocturno */
+body.dark-theme .reserve-bar {
+  background: #1a1a1a !important;
+  border-top: 1px solid #2d2d2d !important;
+}
+
+/* Asegurar que la barra mantenga su fondo oscuro correcto cuando esté fija en Dark Mode */
+body.dark-theme .reserve-bar {
+  background: #1a1a1a !important;
+  border-top: 1px solid #2d2d2d !important;
+}
+
+.reserve-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--white);
+  padding: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(76,175,80,0.2);
+}
+
+.reserve-footer:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ==========================================================================
+   ELEMENTOS DE CONFIRMACIÓN Y COMPONENTES ADICIONALES
+   ========================================================================== */
+
+.confirmation-card,
+.ticket-card,
+.profile-card {
+  background: var(--white);
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.03);
+  border: 1px solid #fbfbfb;
+}
+
+.confirmation-head {
+  display: flex !important;
+  flex-direction: column !important; /* Alineación vertical para poder centrar */
+  align-items: center !important;    /* Centrado horizontal de los textos e ícono */
+  text-align: center !important;     /* Centra el texto interno */
+  gap: 12px !important;              /* Espaciado elegante entre el check y el título */
+  margin-top: 8px !important;
+  margin-bottom: 24px !important;    /* Colchón inferior para separar la tarjeta del producto */
+  width: 100% !important;
+}
+
+/* Ajuste opcional para darle más jerarquía al título principal */
+.confirmation-head h3 {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+/* Ajuste para el subtítulo */
+.confirmation-subtitle {
+  font-size: 14px !important;
+  margin-top: 4px !important;
+}
+
+.success-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--green);
+  color: var(--white);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.confirmation-head h3 { font-size: 18px; }
+.confirmation-subtitle { color: #6b6b6b; font-size: 13px; }
+
+.summary-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #f8faf8;
+  border-radius: 14px;
+  padding: 10px;
+  border: 1px solid #eef4ee;
+  font-size: 13px;
+}
+
+.summary-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.summary-card-copy { display: grid; gap: 2px; }
+.summary-pill {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fff4e5;
+  color: #b96a00;
+  font-size: 10px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.summary-section {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+  background: #f5f5f5;
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-row {
+  padding-top: 6px;
+  border-top: 1px solid #ececec;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.eco-message {
+  margin-top: 14px;
+  display: flex;
+  gap: 6px;
+  color: var(--green);
+  background: #ecf8ee;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.terms-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  color: #5b5b5b;
+  font-size: 13px;
+}
+
+.confirmation-footer { margin-top: 14px; }
+.confirm-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ticket-hero { text-align: center; margin-bottom: 14px; }
+.ticket-badge { margin: 0 auto 8px; }
+.ticket-hero h3 { font-size: 20px; }
+.ticket-hero p { color: #6b6b6b; font-size: 13px; }
+
+.qr-card {
+  background: #fcfcfc;
+  border: 1px solid #f1f1f1;
+  border-radius: 18px;
+  padding: 14px;
+  text-align: center;
+}
+
+.status-pill {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff4e5;
+  color: #b96a00;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.qr-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.qr-card img { width: 130px; height: 130px; }
+.qr-label { font-size: 11px; letter-spacing: 0.12em; color: #8b8b8b; }
+.qr-code { font-size: 20px; font-weight: 800; }
+
+.ticket-details {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+  background: #f8f8f8;
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.ticket-row { display: flex; justify-content: space-between; }
+.limit-text { color: #b96a00; font-weight: 700; }
+.ticket-actions { margin-top: 14px; display: grid; gap: 8px; }
+
+.secondary-button {
+  border: 1px solid #e5e5e5;
+  background: var(--white);
+  color: #2f2f2f;
+  border-radius: 999px;
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ticket-subactions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.screen-header h3 { font-size: 20px; }
+.screen-header p { color: #6b6b6b; font-size: 13px; }
+.tabs-row { display: flex; gap: 8px; margin-bottom: 14px; }
+
+.tab-btn {
+  border: none;
+  border-radius: 999px;
+  background: #f2f2f2;
+  padding: 8px 12px;
+  color: #5c5c5c;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tab-btn.active { background: var(--green); color: var(--white); }
+.section-title-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.section-badge {
+  display: inline-block !important;
+  width: auto !important;          /* Evita que se haga un círculo gigante */
+  height: auto !important;
+  padding: 6px 12px !important;    /* Margen interno estilizado */
+  border-radius: 999px !important; /* Bordes ovalados perfectos */
+  background: #e8f5e9;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap !important;  /* Impide que el texto se parta en dos líneas */
+}
+
+.section-badge.muted {
+  background: #f2f2f2;
+  color: #6b6b6b;
+}
+.reservation-card,
+.history-item {
+  display: flex;
+  gap: 10px;
+  background: var(--white);
+  border-radius: 14px;
+  padding: 10px;
+  border: 1px solid #fcfcfc;
+  font-size: 13px;
+}
+
+.reservation-card img,
+.history-item img { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; }
+.reservation-top, 
+.history-top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px;
+  width: 100%;
+}
+.reservation-top, .history-top { display: flex; justify-content: space-between; }
+.reservation-top h5, .history-top h5 { font-size: 14px; }
+.reservation-meta, .history-meta { margin-top: 6px; display: flex; justify-content: space-between; font-size: 11px; }
+
+.status-chip, 
+.history-badge {
+  display: inline-block !important;
+  width: auto !important;          /* Quita cualquier ancho estático heredado */
+  height: auto !important;
+  padding: 5px 10px !important;    /* Relleno equilibrado */
+  border-radius: 999px !important; /* Forma de píldora alargada */
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+.status-chip.green, .history-badge.completed { background: #e8f5e9 !important; color: #2e7d32 !important; }
+.status-chip.yellow { background: #fff8e1 !important; color: #b8860b !important; }
+.status-chip.gray { background: #f2f2f2 !important; color: #6b6b6b !important; }
+.status-chip.red, .history-badge.canceled { background: #fde7e7 !important; color: #c62828 !important; }
+
+.impact-banner {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.profile-header { display: flex; gap: 12px; margin-bottom: 14px; }
+.avatar { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: var(--white); font-weight: 700; font-size: 18px; }
+.profile-header h3 { font-size: 18px; }
+.profile-header p { color: #6b6b6b; font-size: 13px; }
+.profile-chip { padding: 4px 8px; border-radius: 999px; background: #e8f5e9; color: var(--green); font-size: 11px; font-weight: 700; }
+
+.profile-list { display: grid; gap: 8px; }
+.profile-item { border: 1px solid #efefef; background: #fcfcfc; border-radius: 12px; padding: 10px; display: flex; align-items: center; gap: 8px; color: #2f2f2f; font-weight: 600; cursor: pointer; font-size: 13px; }
+.profile-item .material-icons:last-child { margin-left: auto; color: #8c8c8c; }
+.logout-btn { margin-top: 14px; color: #c85d5d; font-weight: 700; cursor: pointer; border: none; background: transparent; }
+
+.history-banner { background: var(--green); color: var(--white); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.history-banner h4 { font-size: 18px; }
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.filter-pill { border: none; border-radius: 999px; background: #f0f0f0; color: #5f5f5f; padding: 6px 10px; font-weight: 600; cursor: pointer; font-size: 12px; }
+.filter-pill.active { background: var(--green); color: var(--white); }
+
+.history-list { display: grid; gap: 8px; }
+.history-item { align-items: center; }
+
+/* ==========================================================================
+   INTERFACES COMPLEMENTARIAS (Selector de Cantidad)
+   ========================================================================== */
+
+.quantity-selector-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 0;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #F5F5F5;
+  border-radius: 16px;
+  padding: 4px 10px;
+}
+
+.qty-btn {
+  background: none;
+  border: none;
+  color: var(--green);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qty-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+
+@keyframes pulse {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.45; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   ESTILOS DE ALINEACIÓN Y RECUADROS PARA EL HISTORIAL (.history-card-layout)
+   ========================================================================== */
+
+.history-card-layout {
+  background: var(--white) !important;
+  border-radius: 16px !important;
+  padding: 12px !important;
+  margin-bottom: 12px !important;
+  display: flex !important;
+  gap: 14px !important;
+  align-items: center !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03) !important; /* Sombra sutil del recuadro */
+  border: 1px solid #f6f6f6 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+/* Forzar tamaño y proporción fija de la imagen del historial */
+.history-card-img {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 12px !important;
+  object-fit: cover !important; /* Hace que la imagen encaje sin distorsionarse */
+  flex-shrink: 0 !important;
+}
+
+.history-card-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+/* Fila superior: Título e Indicador de Estado alineados simétricamente */
+.history-card-top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.history-card-top h5 {
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: var(--text) !important;
+}
+
+.history-card-desc {
+  margin: 0 !important;
+  font-size: 12px !important;
+  color: #6c6c6c !important;
+}
+
+/* Fila inferior: Precio a la izquierda y Código a la derecha alineados milimétricamente */
+.history-card-meta {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin-top: 2px !important;
+  font-size: 12px !important;
+}
+
+.history-card-price {
+  color: var(--green) !important;
+  font-weight: 700 !important;
+}
+
+.history-card-code {
+  color: #555555 !important;
+}
+
+/* ==========================================================================
+   ESTILOS PREMIUM PARA EL MÓDULO DE CALIFICACIÓN DE ESTRELLAS
+   ========================================================================== */
+
+.rating-box-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 4px !important;
+}
+
+.star-rating-row {
+  display: flex !important;
+  gap: 4px !important;
+  color: #ccc; /* Gris por defecto para estrellas vacías */
+  cursor: pointer;
+}
+
+.star-rating-row .material-icons {
+  font-size: 26px !important;
+  transition: color 0.15s ease;
+}
+
+/* Clase dinámica que inyectaremos con JS al hacer clic */
+.star-rating-row .material-icons.selected {
+  color: #ffb300 !important; /* Dorado brillante de Google */
+}
+
+.submit-rating-btn {
+  border: none !important;
+  background: var(--green) !important;
+  color: var(--white) !important;
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  white-space: nowrap !important;
+  box-shadow: 0 4px 10px rgba(76, 175, 80, 0.15);
+  transition: background 0.2s ease;
+}
+
+.submit-rating-btn:disabled {
+  background: #e0e0e0 !important;
+  color: #a0a0a0 !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   ESTILOS PREMIUM PARA INTERRUPTORES (SWITCHES) Y VARIACIONES MODO OSCURO
+   ========================================================================== */
+
+/* Animación y diseño del switch circular */
+.switch-control input:checked + .slider-round {
+  background-color: var(--green) !important;
+}
+
+.slider-round:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+.switch-control input:checked + .slider-round:before {
+  transform: translateX(20px);
+}
+
+/* ==========================================================================
+   🌙 ACTUALIZACIÓN: EXCLUSIÓN DE LOGIN Y SPLASH SCREEN EN MODO OSCURO
+   ========================================================================= */
+
+body.dark-theme {
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
+}
+
+/* Forzar fondo oscuro en la estructura principal EXCEPTO en login y splash */
+body.dark-theme .app-shell:not(.show-login) {
+  background-color: #121212 !important;
+}
+
+/* 🌟 CORRECCIÓN: Indicar de forma estricta que las pantallas de inicio NO se oscurezcan */
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen),
+body.dark-theme .profile-screen,
+body.dark-theme .home-screen,
+body.dark-theme .detail-screen,
+body.dark-theme .reservations-screen,
+body.dark-theme .confirmation-screen,
+body.dark-theme .ticket-screen,
+body.dark-theme .history-screen {
+  background-color: #121212 !important;
+}
+
+/* Forzar que los textos solo se pongan blancos dentro de las pantallas internas */
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) h1, 
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) h2, 
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) h3, 
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) h4, 
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) h5, 
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) p,
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) span,
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) strong {
+  color: #ffffff !important;
+}
+
+/* Estilo unificado para tarjetas internas de la interfaz en modo noche */
+/* 🌟 REEMPLAZO NUEVO: INCLUYE EL PARCHE COMPLETO DE TARJETAS DEL HOME */
+body.dark-theme .profile-item,
+body.dark-theme .logout-item,
+body.dark-theme .profile-list .profile-item,
+body.dark-theme .history-card-layout,
+body.dark-theme .reservation-card,
+body.dark-theme .profile-card,
+body.dark-theme .confirmation-card,
+body.dark-theme .ticket-card,         /* 🌟 CORRECCIÓN: Cambia el fondo blanco de esta pantalla */
+body.dark-theme .ticket-details,   /* 🌟 CORRECCIÓN CRÍTICA: Cambia el fondo blanco de esta pantalla */
+body.dark-theme .top-bar,
+body.dark-theme .detail-card,
+body.dark-theme .summary-card,
+body.dark-theme .qr-card,
+body.dark-theme .category-btn:not(.active),
+body.dark-theme .filter-chip:not(.active),
+body.dark-theme .location-pill,
+body.dark-theme .search-bar,
+body.dark-theme .pack-card,
+body.dark-theme .pack-content,
+body.dark-theme .cards-list > div,
+body.dark-theme #cardsList > div,
+body.dark-theme .reserve-bar,         
+body.dark-theme .detail-price-card,   
+body.dark-theme .summary-section {   
+  background: #252525 !important;
+  background-color: #252525 !important;
+  border-color: #333333 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-theme .profile-item span,
+body.dark-theme .profile-item .material-icons,
+body.dark-theme .history-card-top h5,
+body.dark-theme .reservation-top h5 {
+  color: #ffffff !important; /* Blanco puro para legibilidad total */
+}
+
+/* Mantener el color destructivo rojo para la opción de salida */
+body.dark-theme .logout-item span,
+body.dark-theme .logout-item .material-icons {
+  color: #ef5350 !important; /* Rojo brillante premium */
+}
+
+/* 2. FORZAMOS QUE LOS TÍTULOS DENTRO DE LAS TARJETAS SEAN BLANCOS NÍTIDOS */
+body.dark-theme .history-card-top h5,
+body.dark-theme .reservation-top h5,
+body.dark-theme .card-top h4,
+body.dark-theme .profile-item span {
+  color: #ffffff !important; /* Blanco puro para legibilidad total */
+  font-weight: 700 !important;
+}
+
+/* Ajuste opcional para el texto de "Código:" y "S/ 45.00" si se ven muy apagados */
+body.dark-theme .history-card-code,
+body.dark-theme .reservation-meta {
+  color: #cccccc !important;
+}
+
+/* Conservar textos secundarios legibles pero atenuados internamente */
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) .history-card-desc,
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) .screen-header p,
+body.dark-theme .pantalla:not(.login-screen):not(.splash-screen) .confirmation-subtitle {
+  color: #b0b0b0 !important;
+}
+
+/* ==========================================================================
+   📱 CONFIGURACIÓN DEL NAVBAR INFERIOR (MANTIENE LA EXCLUSIÓN DE LOGIN)
+   ========================================================================= */
+
+body.dark-theme .bottom-nav {
+  background: #1a1a1a !important;
+  border-top: 1px solid #2d2d2d !important;
+}
+
+body.dark-theme .nav-item {
+  color: #757575 !important;
+}
+
+body.dark-theme .nav-item .material-icons {
+  color: #757575 !important;
+}
+
+body.dark-theme .nav-item.active {
+  color: var(--green) !important;
+}
+
+body.dark-theme .nav-item.active .material-icons {
+  color: var(--green) !important;
+}
+
+/* 🌟 AGREGA ESTAS REGLAS AL FINAL DE TU MODO OSCURO EN STYLES.CSS */
+
+/* Forzar que el título de la tienda en la vista detalle sea blanco puro */
+body.dark-theme .detail-title-block h3,
+body.dark-theme #detailBusiness {
+  color: #ffffff !important;
+}
+
+/* Corregir textos de selección y subtítulos que se quedaron grises o negros */
+body.dark-theme .quantity-selector-container span,
+body.dark-theme .detail-section h4,
+body.dark-theme .detail-row strong {
+  color: #ffffff !important;
+}
+
+/* Cambiar el fondo del selector de cantidad (+ 1 -) para que no sea blanco brillante */
+body.dark-theme .quantity-selector {
+  background-color: #333333 !important;
+}
+
+body.dark-theme .qty-count {
+  color: #ffffff !important;
+}
+
+/* Ajustar el botón de ahorro interno de la tarjeta de precios */
+body.dark-theme .savings-pill {
+  background: #3a2a18 !important;
+  color: #ff9800 !important;
+  border-color: #5c3e14 !important;
+}
+
+/* 🌟 CORRECCIÓN: Hace legible el botón de Google Maps */
+body.dark-theme .map-link,
+body.dark-theme #detailMapLink {
+  color: #ffffff !important;
+  border-color: #555555 !important;
+  background-color: #333333 !important;
+}
+/* 🌟 CAMBIO 1: Hace que la pantalla de detalle sea un contenedor rígido con scroll interno */
+.detail-screen {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important; /* Quitamos el padding global para controlar los componentes */
+  overflow: hidden !important; /* Evita que la pantalla completa se estire */
+}
+
+/* El contenido del producto (la foto, mapa, descripción) se deslizará de forma independiente */
+.detail-card {
+  flex: 1 !important;
+  overflow-y: auto !important; /* El scroll ocurre SOLO dentro de la tarjeta de información */
+  padding: 20px 16px 20px !important;
+  margin-top: -24px !important;
+}
+
+/* 🌟 AGREGA ESTAS REGLAS AL FINAL DE TU MODO OSCURO EN STYLES.CSS */
+
+/* Forzar visibilidad del título y subtítulo de la pantalla de confirmación */
+body.dark-theme #confirmationScreen .summary-section,
+body.dark-theme .confirmation-screen .summary-section {
+  background: #252525 !important;
+  background-color: #252525 !important;
+  border: 1px solid #333333 !important;
+}
+
+/* Forzar visibilidad de las etiquetas de texto dentro del desglose de precios */
+body.dark-theme .summary-section span,
+body.dark-theme .summary-section strong,
+body.dark-theme .terms-row span {
+  color: #ffffff !important;
+}
+
+/* Dejar el banner ecológico con un tono verde oscuro premium muy sutil */
+body.dark-theme .eco-message {
+  background: #1b3a24 !important;
+  color: #81c784 !important;
+}
+body.dark-theme .eco-message p {
+  color: #81c784 !important;
+}
+
+body.dark-theme #confirmationScreen .summary-row,
+body.dark-theme #confirmationScreen .summary-row span,
+body.dark-theme #confirmationScreen .summary-row strong,
+body.dark-theme #confirmationScreen .total-row,
+body.dark-theme #confirmationScreen .total-row span,
+body.dark-theme #confirmationScreen .total-row strong {
+  color: #ffffff !important;
+}
+
+/* 3. Forzar visibilidad del texto de los términos y condiciones junto al checkbox */
+body.dark-theme #confirmationScreen .terms-row,
+body.dark-theme #confirmationScreen .terms-row span {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   🎯 ALINEACIÓN SIMÉTRICA DE LA FLECHA DE REGRESO (TICKET)
+   ========================================================================= */
+#ticketScreen .circle-btn,
+#ticketScreen #backToHomeFromTicket {
+  position: absolute !important;
+  
+  /* 🌟 CORRECCIÓN: Le da un colchón de aire simétrico respecto a los bordes */
+  top: 16px !important;  
+  left: 16px !important; 
+  
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  z-index: 15 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2) !important;
+}
+/* 🌟 HACE QUE EL HOME SEA UN CONTENEDOR FLEXIBLE RÍGIDO SIN SCROLL GLOBAL */
+.home-screen {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;       /* Congela el buscador, categorías y filtros arriba */
+  padding: 24px 16px 0px !important; /* Mantiene la simetría original de los bordes */
+  height: 100% !important;           /* Fuerza a respetar los límites del smartphone */
+  width: 100% !important;
+}
+
+.top-bar,
+.category-section,
+.filter-shell {
+  flex-shrink: 0 !important; /* Impide que colapsen o se encojan */
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Evitar márgenes excesivos que puedan descuadrar el bloque superior fijo */
+.top-bar {
+  padding-bottom: 8px !important;
+}
+.category-section {
+  margin-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+/* Soporte nativo para pantalla de rol y de administrador */
+.role-screen, .admin-screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 24px 16px 100px;
+  background: #ffffff;
+}
+
+/* Adaptación del Modo Oscuro en el Panel del Negocio */
+body.dark-theme .role-screen,
+body.dark-theme .admin-screen {
+  background-color: #121212 !important;
+}
+
+body.dark-theme .admin-screen input {
+  color: #ffffff !important;
+  background: transparent;
+}

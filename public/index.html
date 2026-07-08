@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SamiPacks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=20260706" />
+  </head>
+  <body>
+    <main class="app-shell" id="appShell">
+      <section class="splash-screen" role="main" aria-label="Pantalla de inicio">
+        <div class="splash-card">
+          <div class="logo-badge" aria-hidden="true">
+            <span class="material-icons">eco</span>
+          </div>
+          <h1>SamiPacks</h1>
+          <p class="tagline">Salva comida, ahorra dinero.</p>
+          <div class="loading-dots" aria-label="Cargando">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </section>
+      <section class="role-screen" id="roleScreen" aria-label="Selección de Rol" hidden>
+        <div class="login-card" style="text-align: center; justify-content: center; gap: 24px; height: 100%; display: flex; flex-direction: column;">
+          <div class="brand-header">
+            <div class="logo-badge" aria-hidden="true">
+              <span class="material-icons">eco</span>
+            </div>
+            <h2>SamiPacks</h2>
+            <p class="tagline">¿Cómo deseas ingresar hoy?</p>
+          </div>
+          
+          <button class="primary-button" id="btnRoleUsuario" type="button" style="width: 100%;">
+            <span class="material-icons">person</span>
+            <span class="btn-label">Ingresar como Cliente</span>
+          </button>
+          
+          <button class="secondary-button" id="btnRoleAdmin" type="button" style="width: 100%; border-radius: 14px; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span class="material-icons">storefront</span>
+            <span class="btn-label">Ingresar como Negocio</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="login-screen" aria-label="Pantalla de inicio de sesión">
+        <div class="login-card" id="loginCard">
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">eco</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <a href="#" class="forgot-link" id="backToRoleLink" style="text-align:center; margin: -8px 0 4px;">
+            <span class="material-icons" style="font-size:14px; vertical-align:middle;">arrow_back</span>
+            Cambiar tipo de cuenta
+          </a>
+
+          <div class="illustration-card" aria-hidden="true">
+            <div class="illustration-circle">
+              <svg viewBox="0 0 240 240" role="img" aria-label="Ilustración de alimentos saludables">
+                <rect x="40" y="96" width="160" height="92" rx="20" fill="#7b4f2d" />
+                <rect x="58" y="80" width="124" height="30" rx="12" fill="#a06b3d" />
+                <circle cx="92" cy="102" r="24" fill="#f44336" />
+                <circle cx="146" cy="116" r="20" fill="#8bc34a" />
+                <path d="M132 94c10-18 32-24 44-12 10 10 12 24 0 36-16 16-38 10-44-24Z" fill="#4caf50" />
+                <path d="M94 130c-12 0-22 10-22 22 0 10 8 16 20 16h8c8 0 14-7 14-14 0-12-8-24-20-24Z" fill="#ff9800" />
+                <path d="M127 146c4-12 16-20 28-18 12 2 20 12 18 24-3 13-18 16-28 16-10 0-24-9-18-22Z" fill="#4caf50" />
+                <path d="M66 146c-10 0-18 8-18 18 0 8 6 14 14 15 10 1 18-4 20-14 1-9-5-19-16-19Z" fill="#ffca28" />
+                <path d="M82 74c0-12 10-22 22-22 12 0 20 9 20 20-1 13-12 22-22 22-14 0-20-10-20-20Z" fill="#8bc34a" />
+              </svg>
+            </div>
+          </div>
+
+          <h3>¡Hola de nuevo!</h3>
+          <p class="welcome-text">
+            Únete a la comunidad de SamiPacks y salva deliciosa comida hoy.
+          </p>
+
+          <form class="login-form" id="loginForm" novalidate>
+            <label class="input-group" id="emailGroup">
+              <span class="material-icons">mail_outline</span>
+              <input type="email" id="loginEmail" placeholder="tu@email.com" autocomplete="email" required />
+            </label>
+            <p class="field-error" id="emailError" hidden>Ingresa un correo válido.</p>
+
+            <label class="input-group password-group" id="passwordGroup">
+              <span class="material-icons">lock_outline</span>
+              <input type="password" id="loginPassword" placeholder="Contraseña" autocomplete="current-password" required />
+              <button class="icon-button" type="button" id="togglePasswordBtn" aria-label="Mostrar contraseña" aria-pressed="false">
+                <span class="material-icons">visibility</span>
+              </button>
+            </label>
+            <p class="field-error" id="passwordError" hidden>La contraseña es obligatoria.</p>
+
+            <a href="#" class="forgot-link">¿La olvidaste?</a>
+
+            <button class="primary-button" type="submit" id="loginSubmitBtn">
+              <span class="btn-label">Iniciar sesión</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+
+          <p class="signup-link">
+            ¿No tienes cuenta? <a href="#" id="goToRegisterLink">Registrarse</a>
+          </p>
+
+          <div class="separator"><span>o continúa con</span></div>
+
+          <div class="social-row">
+            <button class="social-btn btn-google" type="button" id="btnGoogle">
+              <span class="social-logo">G</span>
+              Google
+            </button>
+            <button class="social-btn btn-facebook" type="button" id="btnFacebook">
+              <span class="social-logo">f</span>
+              Facebook
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulario de Registro real (antes "Registrarse" era solo un enlace decorativo) -->
+        <div class="login-card" id="registerCard" hidden>
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">eco</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <h3>Crea tu cuenta</h3>
+          <p class="welcome-text">
+            Únete a SamiPacks y empieza a salvar comida hoy mismo.
+          </p>
+
+          <form class="login-form" id="registerForm" novalidate>
+            <label class="input-group" id="registerNameGroup">
+              <span class="material-icons">person_outline</span>
+              <input type="text" id="registerName" placeholder="Nombre completo" autocomplete="name" required />
+            </label>
+            <p class="field-error" id="registerNameError" hidden>Ingresa tu nombre completo.</p>
+
+            <label class="input-group" id="registerEmailGroup">
+              <span class="material-icons">mail_outline</span>
+              <input type="email" id="registerEmail" placeholder="tu@email.com" autocomplete="email" required />
+            </label>
+            <p class="field-error" id="registerEmailError" hidden>Ingresa un correo válido.</p>
+
+            <label class="input-group password-group" id="registerPasswordGroup">
+              <span class="material-icons">lock_outline</span>
+              <input type="password" id="registerPassword" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="new-password" required />
+              <button class="icon-button" type="button" id="toggleRegisterPasswordBtn" aria-label="Mostrar contraseña" aria-pressed="false">
+                <span class="material-icons">visibility</span>
+              </button>
+            </label>
+            <p class="field-error" id="registerPasswordError" hidden>La contraseña debe tener al menos 6 caracteres.</p>
+
+            <label class="input-group" id="registerPasswordConfirmGroup">
+              <span class="material-icons">lock_outline</span>
+              <input type="password" id="registerPasswordConfirm" placeholder="Confirmar contraseña" autocomplete="new-password" required />
+            </label>
+            <p class="field-error" id="registerPasswordConfirmError" hidden>Las contraseñas no coinciden.</p>
+
+            <button class="primary-button" type="submit" id="registerSubmitBtn">
+              <span class="btn-label">Crear cuenta</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+
+          <p class="signup-link">
+            ¿Ya tienes cuenta? <a href="#" id="goToLoginLink">Iniciar sesión</a>
+          </p>
+        </div>
+
+        <!-- Paso 2 del registro (solo cuentas de Negocio): datos del negocio -->
+        <div class="login-card" id="registerBusinessCard" hidden>
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">storefront</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <h3>Cuéntanos sobre tu negocio</h3>
+          <p class="welcome-text">
+            Ya casi terminas. Estos datos aparecerán en tu perfil y en tus SamiPacks publicados.
+          </p>
+
+          <form class="login-form" id="registerBusinessForm" novalidate>
+            <label class="input-group" id="registerBusinessNameGroup">
+              <span class="material-icons">storefront</span>
+              <input type="text" id="registerBusinessName" placeholder="Nombre del negocio" required />
+            </label>
+            <p class="field-error" id="registerBusinessNameError" hidden>Ingresa el nombre de tu negocio.</p>
+
+            <label class="input-group" id="registerBusinessCategoryGroup">
+              <span class="material-icons">shopping_bag</span>
+              <select id="registerBusinessCategory" required>
+                <option value="" disabled selected>Selecciona una categoría</option>
+                <option value="Comidas">Comidas</option>
+                <option value="Cafés">Cafés</option>
+                <option value="Bebidas">Bebidas</option>
+                <option value="Panadería">Panadería</option>
+                <option value="Postres">Postres</option>
+              </select>
+            </label>
+            <p class="field-error" id="registerBusinessCategoryError" hidden>Selecciona una categoría.</p>
+
+            <label class="input-group" id="registerBusinessPhoneGroup">
+              <span class="material-icons">call</span>
+              <input type="tel" id="registerBusinessPhone" placeholder="Teléfono de contacto" required />
+            </label>
+            <p class="field-error" id="registerBusinessPhoneError" hidden>Ingresa un teléfono de contacto.</p>
+
+            <label class="input-group" id="registerBusinessResponsibleGroup">
+              <span class="material-icons">person_outline</span>
+              <input type="text" id="registerBusinessResponsible" placeholder="Responsable del negocio" required />
+            </label>
+            <p class="field-error" id="registerBusinessResponsibleError" hidden>Ingresa el nombre del responsable.</p>
+
+            <button class="primary-button" type="submit" id="registerBusinessSubmitBtn">
+              <span class="btn-label">Guardar y continuar</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Modal simulado de selección de cuenta (Google / Facebook) -->
+        <div class="auth-modal-overlay" id="authModalOverlay" aria-hidden="true">
+          <div class="auth-modal-card" id="authModalCard" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+            <div class="auth-modal-head">
+              <div class="auth-modal-brand">
+                <span class="social-logo" id="authModalLogo">G</span>
+                <h4 class="auth-modal-title" id="authModalTitle">Elige una cuenta</h4>
+              </div>
+              <button class="auth-modal-close" type="button" id="authModalCloseBtn" aria-label="Cerrar">
+                <span class="material-icons">close</span>
+              </button>
+            </div>
+            <p class="auth-modal-subtitle" id="authModalSubtitle">para continuar a SamiPacks</p>
+
+            <!-- Vista lista de cuentas (Google) -->
+            <div class="auth-account-list" id="authAccountList"></div>
+
+            <!-- Vista confirmación estilo Facebook -->
+            <div class="auth-fb-confirm" id="authFbConfirm" hidden>
+              <div class="auth-account-avatar" id="authFbAvatar">A</div>
+              <p class="auth-fb-confirm-name" id="authFbName">Alex Rivera</p>
+              <p class="auth-fb-confirm-email" id="authFbEmail">alex.rivera@facebook.com</p>
+              <button class="auth-fb-continue-btn" type="button" id="authFbContinueBtn">Continuar</button>
+              <button class="auth-fb-switch-link" type="button" id="authFbSwitchBtn">No soy yo / usar otra cuenta</button>
+            </div>
+
+            <!-- Vista de agregar cuenta nueva -->
+            <div class="auth-new-account-form" id="authNewAccountForm">
+              <div class="auth-back-row">
+                <button class="auth-back-btn" type="button" id="authBackBtn" aria-label="Volver">
+                  <span class="material-icons">arrow_back</span>
+                </button>
+                <strong id="authNewAccountTitle" style="font-size:14px;">Agregar cuenta de Google</strong>
+              </div>
+              <label class="input-group">
+                <span class="material-icons">person_outline</span>
+                <input type="text" id="authNewName" placeholder="Nombre completo" autocomplete="name" />
+              </label>
+              <label class="input-group">
+                <span class="material-icons">mail_outline</span>
+                <input type="email" id="authNewEmail" placeholder="correo@ejemplo.com" autocomplete="email" />
+              </label>
+              <button class="primary-button" type="button" id="authNewAccountContinueBtn">
+                <span class="btn-label">Continuar</span>
+              </button>
+            </div>
+
+            <p class="auth-modal-footer-note" id="authModalFooterNote">
+              Antes de continuar, SamiPacks accederá a tu nombre y correo para crear o iniciar sesión en tu cuenta.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="home-screen" aria-label="Pantalla principal">
+        <div class="home-container">
+          <header class="top-bar">
+            <button class="location-pill" id="locationPill" type="button">
+              <span class="material-icons">place</span>
+              <span id="locationLabel">Miraflores, Lima</span>
+            </button>
+            <label class="search-bar">
+              <span class="material-icons">search</span>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Buscar en SamiPacks..."
+                inputmode="search"
+                enterkeyhint="search"
+                autocomplete="off"
+              />
+            </label>
+          </header>
+
+          <div class="category-section">
+            <div class="category-carousel">
+              <div class="category-row" id="categoryRow">
+                <button class="category-btn active" data-category="Todos" type="button">Todos</button>
+                <button class="category-btn" data-category="Comidas" type="button">Comidas</button>
+                <button class="category-btn" data-category="Cafés" type="button">Cafés</button>
+                <button class="category-btn" data-category="Bebidas" type="button">Bebidas</button>
+                <button class="category-btn" data-category="Panadería" type="button">Panadería</button>
+                <button class="category-btn" data-category="Postres" type="button">Postres</button>
+              </div>
+            </div>
+
+            <div class="filter-shell">
+              <button class="filters-toggle" id="filtersToggle" type="button" aria-expanded="false" aria-controls="filterRow">
+                <span class="material-icons">tune</span>
+                Filtros avanzados
+              </button>
+              <div class="filter-row" id="filterRow" aria-label="Filtros rápidos">
+                <button class="filter-chip active" data-filter="distancia" type="button">Distancia</button>
+                <button class="filter-chip" data-filter="precio" type="button">Precio</button>
+                <button class="filter-chip" data-filter="descuento" type="button">Descuento</button>
+                <button class="filter-chip" data-filter="disponibilidad" type="button">Disponibilidad</button>
+                <button class="filter-chip" data-filter="hora-maxima" type="button">Hora máxima</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="results-header">
+            <div>
+              <h3 id="resultsTitle">Encontramos 8 SamiPacks deliciosos cerca de ti</h3>
+              <p id="resultsSubtitle">Explora opciones listas para reservar hoy</p>
+            </div>
+            <button class="clear-filters" id="clearFiltersBtn" type="button">
+              <span class="material-icons">close</span>
+              Limpiar filtros
+            </button>
+          </div>
+
+          <div class="cards-list" id="cardsList"></div>
+        </div>
+      </section>
+
+      <section class="detail-screen" id="detailScreen" aria-label="Detalle del SamiPack" hidden>
+        <div class="detail-hero">
+          <img id="detailImage" src="" alt="SamiPack" />
+          <div class="detail-actions">
+            <button class="circle-btn" id="backToHomeBtn" type="button" aria-label="Volver">
+              <span class="material-icons">arrow_back</span>
+            </button>
+            <button class="circle-btn" type="button" aria-label="Compartir">
+              <span class="material-icons">share</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-header">
+            <div class="detail-title-block">
+              <div class="detail-title-texts">
+                <h3 id="detailCategory">Panadería</h3>
+                <p id="detailBusiness" class="detail-business-name">Panadería El Trigo de Oro</p>
+              </div>
+              <div class="rating">
+                <span class="material-icons">star</span>
+                <span id="detailRating">4.8</span>
+              </div>
+            </div>
+            <span class="detail-tag" id="detailRemaining">¡Quedan 6 packs!</span>
+          </div>
+
+          <div class="detail-section">
+            <h4>¿Qué hay en el pack?</h4>
+            <p id="detailDescription">Bolsas de pan recién horneado, medialunas y panes integrales listos para ser disfrutados.</p>
+          </div>
+
+          <div class="detail-price-card">
+            <div class="price-stack">
+              <span class="old-price" id="detailOriginalPrice">S/ 35.00</span>
+              <span class="new-price" id="detailFinalPrice">S/ 22.50</span>
+            </div>
+            <div class="savings-pill" id="detailSavings">Ahorras: S/ 12.50</div>
+          </div>
+
+          <div class="quantity-selector-container">
+            <span style="font-weight: 500; color: #666666;">Seleccionar cantidad:</span>
+            <div class="quantity-selector">
+              <button class="qty-btn" id="btnMinus" type="button">—</button>
+              <span class="qty-count" id="quantityCount">1</span>
+              <button class="qty-btn" id="btnPlus" type="button">+</button>
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <span class="material-icons">schedule</span>
+            <div>
+              <strong>Horario de recogida</strong>
+              <p id="detailSchedule">18:30 - 19:30</p>
+            </div>
+          </div>
+
+          <div class="detail-impact">
+            <span class="material-icons">eco</span>
+            <span id="detailImpact">0.8kg CO2 evitados</span>
+          </div>
+
+          <div class="detail-map">
+            <div class="map-card">
+              <iframe
+                id="detailMapFrame"
+                title="Mapa del negocio"
+                loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+                src=""
+              ></iframe>
+              <div class="map-info">
+                <div class="map-location">
+                  <p id="detailAddress">Av. Benavides 210, Miraflores</p>
+                  <span>Recoge en menos de 10 min</span>
+                </div>
+                <a
+                  class="map-link"
+                  id="detailMapLink"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ver en Google Maps
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reserve-bar">
+          <button class="reserve-footer" id="reserveFooterBtn" type="button">
+            Reservar SamiPack
+            <span class="material-icons">arrow_forward</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="confirmation-screen" id="confirmationScreen" aria-label="Confirmación de reserva" hidden>
+        <div class="confirmation-card">
+          <button class="circle-btn back-confirm" id="backToDetailBtn" type="button" aria-label="Volver al detalle">
+            <span class="material-icons">arrow_back</span>
+            
+          </button>
+
+          <div class="confirmation-head">
+            <div class="success-badge">✓</div>
+            <div>
+              <h3>Confirmación</h3>
+              <p class="confirmation-subtitle">Revisa tu pedido</p>
+            </div>
+          </div>
+
+          <div class="summary-card">
+            <img id="summaryImage" src="" alt="Producto seleccionado" />
+            <div class="summary-card-copy">
+              <span class="summary-pill">SamiPack Sorpresa</span>
+              <h4 id="summaryBusiness">Panadería El Trigo de Oro</h4>
+              <p id="summaryAddress">Av. Benavides 210, Miraflores</p>
+              <p id="summarySchedule">18:30 - 19:30</p>
+            </div>
+          </div>
+
+          <div class="summary-section">
+            <div class="summary-row">
+              <span>Precio original</span>
+              <strong id="summaryOriginal">S/ 35.00</strong>
+            </div>
+            <div class="summary-row">
+              <span>Precio SamiPack</span>
+              <strong id="summaryFinal">S/ 22.50</strong>
+            </div>
+            <div class="summary-row total-row">
+              <span>Total a pagar</span>
+              <strong id="summaryTotal">S/ 22.50</strong>
+            </div>
+          </div>
+
+          <div class="eco-message">
+            <span class="material-icons">eco</span>
+            <p id="summaryEco">Evitarás el desperdicio de 0.8kg de comida con esta reserva.</p>
+          </div>
+
+          <label class="terms-row">
+            <input id="confirmTerms" type="checkbox" />
+            <span>Acepto los términos y condiciones de SamiPacks.</span>
+          </label>
+
+          <div style="width: 100%; margin-top: 20px; display: flex; justify-content: center; box-sizing: border-box;">
+            <button class="primary-button confirm-button" id="confirmReservationBtn" type="button" disabled style="width: 100% !important; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box;">
+              Confirmar reserva
+              <span class="material-icons">arrow_forward</span>
+            </button>
+          </div>
+        </div> </section>
+
+      <section class="ticket-screen" id="ticketScreen" aria-label="Boleta digital" hidden>
+        <div class="ticket-card" style="position: relative;"> <!-- Añadido relative para posicionar la flecha -->
+          
+          <!-- 🌟 NUEVO BOTÓN PARA REGRESAR AL HOME -->
+          <button class="circle-btn" id="backToHomeFromTicket" type="button" aria-label="Volver al inicio" style="position: absolute; top: 0; left: 0; z-index: 10;">
+            <span class="material-icons">arrow_back</span>
+          </button>
+
+          <div class="ticket-hero">
+            <div class="success-badge ticket-badge">✓</div>
+            <h3>¡Reserva Completada!</h3>
+            <p>Tu pack ha sido reservado. Presenta este código al recogerlo.</p>
+          </div>
+
+          <div class="qr-card">
+            <span class="status-pill">⚠️ Pendiente de recoger</span>
+            <div class="qr-wrapper" style="display: flex; justify-content: center; align-items: center; padding: 15px 0;">
+              <img id="ticketQr" src="" alt="Código QR" />
+            </div>
+            <p class="qr-label">CÓDIGO DE RECOGIDA</p>
+            <div class="qr-code" id="ticketCode">SP-84A9QX</div>
+          </div>
+
+          <div class="ticket-details">
+            <div class="ticket-row">
+              <span>Usuario</span>
+              <strong id="ticketUser">Alex Rivera</strong>
+            </div>
+            <div class="ticket-row">
+              <span>Negocio</span>
+              <strong id="ticketBusiness">Café Verde</strong>
+            </div>
+            <div class="ticket-row">
+              <span>Fecha de reserva</span>
+              <strong id="ticketDate">Hoy</strong>
+            </div>
+            <div class="ticket-row">
+              <span>LÍMITE RECOGIDA</span>
+              <strong class="limit-text" id="ticketLimit">Hoy, 19:00h</strong>
+            </div>
+          </div>
+
+          <!-- Solo visible cuando el ticket corresponde a una reserva activa (pendiente de recoger) -->
+          <div class="ticket-pickup-actions" id="ticketPickupActions" hidden style="display:flex; gap:10px; margin-top:16px;">
+            <button class="primary-button" id="confirmPickupBtn" type="button" style="flex:1; background: var(--green); display:flex; align-items:center; justify-content:center; gap:6px;">✅ Confirmar recogida</button>
+            <button class="secondary-button" id="cancelReservationBtn" type="button" style="flex:1; color:#e53935; border-color:#e53935;">❌ Cancelar</button>
+          </div>
+
+          <div class="ticket-actions">
+            <button class="primary-button ticket-save-btn" type="button">📥 Guardar</button>
+            <div class="ticket-subactions">
+              <button class="secondary-button" id="ticketLocationBtn" type="button">🗺️ Ver ubicación</button>
+              <button class="secondary-button" id="ticketShareBtn" type="button">🔗 Compartir</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="reservations-screen" id="reservationsScreen" aria-label="Mis reservas" hidden>
+        <div class="screen-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="backFromReservations" class="icon-button" type="button" aria-label="Volver">
+              <span class="material-icons">arrow_back</span>
+            </button>
+            <h3>Mis reservas</h3>
+          </div>
+          <p>Gestiona tus entregas y revisa tus reservas activas.</p>
+        </div>
+
+        <div class="tabs-row" role="tablist" aria-label="Selector de reservas">
+          <button class="tab-btn active" data-tab="active" type="button">Activas</button>
+          <button class="tab-btn" data-tab="history" type="button">Historial</button>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title-row">
+            <h4>Próximas entregas</h4>
+            <span class="section-badge">2 pendientes</span>
+          </div>
+          <div class="reservation-card reservation-active">
+            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=300&q=80" alt="Café Verde" />
+            <div class="reservation-body">
+              <div class="reservation-top">
+                <h5>Café Verde</h5>
+                <span class="status-chip green">Disponible</span>
+              </div>
+              <p>Pack de café y medialunas</p>
+              <div class="reservation-meta">🕒 Hoy · 18:00h</div>
+            </div>
+          </div>
+          <div class="reservation-card reservation-active">
+            <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=300&q=80" alt="Panadería El Trigo de Oro" />
+            <div class="reservation-body">
+              <div class="reservation-top">
+                <h5>Panadería El Trigo de Oro</h5>
+                <span class="status-chip yellow">Próxima a vencer</span>
+              </div>
+              <p>Pack sorpresa de pan</p>
+              <div class="reservation-meta">🕒 Hoy · 19:30h</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title-row">
+            <h4>Recientes</h4>
+            <span class="section-badge muted">2 eventos</span>
+          </div>
+          <div class="reservation-card reservation-past">
+            <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80" alt="Sabor de la Casa" />
+            <div class="reservation-body">
+              <div class="reservation-top">
+                <h5>Sabor de la Casa</h5>
+                <span class="status-chip gray">Recogida</span>
+              </div>
+              <p>Pack de platos del día</p>
+              <div class="reservation-meta">🕒 Ayer · 20:00h</div>
+            </div>
+          </div>
+          <div class="reservation-card reservation-past">
+            <img src="https://images.unsplash.com/photo-1483695028939-5bb13f8648b0?auto=format&fit=crop&w=300&q=80" alt="Dulce Tentación" />
+            <div class="reservation-body">
+              <div class="reservation-top">
+                <h5>Dulce Tentación</h5>
+                <span class="status-chip red">Expirada</span>
+              </div>
+              <p>Pack de postres</p>
+              <div class="reservation-meta">🕒 Hace 2 días · 17:00h</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="impact-banner">
+          <span class="material-icons">eco</span>
+          <p>🌿 Tu Impacto Positivo: Has salvado 14 packs este mes. Nivel: Amigo del Planeta</p>
+        </div>
+      </section>
+
+<!-- ==========================================================================
+           1. REEMPLAZA DESDE AQUÍ (MÓDULO DE PERFIL CORREGIDO)
+           ========================================================================== -->
+      <section class="profile-screen" id="profileScreen" aria-label="Perfil de usuario" hidden>
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="avatar">AR</div>
+            <div>
+              <h3 id="perf-nombre">Alex Rivera</h3>
+              <p id="perf-correo">alex@samipacks.com</p>
+              <span class="profile-chip">💚 12 Packs Rescatados</span>
+            </div>
+          </div>
+
+          <!-- Lista de botones perfectamente ensanchada al 100% -->
+          <div class="profile-list" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+            <button class="profile-item" data-view="reservations" type="button">
+              <span class="material-icons">event_available</span>
+              <span>Mis reservas</span>
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <button class="profile-item" data-view="history" type="button">
+              <span class="material-icons">receipt_long</span>
+              <span>Historial</span>
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <button class="profile-item" data-view="rating-module" type="button">
+              <span class="material-icons">star</span>
+              <span>Calificar SamiPacks</span>
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <button class="profile-item" data-view="help" type="button">
+              <span class="material-icons">help_outline</span>
+              <span>Ayuda</span>
+              <span class="material-icons">chevron_right</span>
+            </button>
+            <button class="profile-item" data-view="settings" type="button">
+              <span class="material-icons">settings</span>
+              <span>Configuración</span>
+              <span class="material-icons">chevron_right</span>
+            </button>
+
+            <!-- 🌟 BOTÓN CERRAR SESIÓN FLUIDO Y ALINEADO CON EL ANCHO DE LAS TARJETAS -->
+            <button class="profile-item logout-item" data-view="logout" type="button" style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="material-icons" style="color: #ef5350;">logout</span>
+                <span style="color: #ef5350; font-weight: 600;">Cerrar sesión</span>
+              </div>
+              <span class="material-icons" style="color: #ef5350;">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      </section>
+      <!-- ========================================================================== -->
+
+      <section class="history-screen" id="historyScreen" aria-label="Historial de compras" hidden>
+        <div class="screen-header history-header">
+          <div>
+            <h3>Historial</h3>
+            <p>Tu historial de compras y ahorros.</p>
+          </div>
+        </div>
+
+        <div class="history-banner">
+          <h4>TOTAL AHORRADO: S/ 142.50</h4>
+        </div>
+
+        <div class="filter-pills">
+          <button class="filter-pill active" type="button">Todos</button>
+          <button class="filter-pill" type="button">Restaurantes</button>
+          <button class="filter-pill" type="button">Panaderías</button>
+          <button class="filter-pill" type="button">Supermercados</button>
+        </div>
+
+        <div class="history-list">
+          <div class="history-item">
+            <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=300&q=80" alt="Café Verde" />
+            <div class="history-body">
+              <div class="history-top">
+                <h5>Café Verde</h5>
+                <span class="history-badge completed">Completada</span>
+              </div>
+              <p>17 jun · 18:30</p>
+              <div class="history-meta">
+                <span>⭐ 4.8</span>
+                <strong>S/ 8.50</strong>
+              </div>
+            </div>
+          </div>
+          <div class="history-item">
+            <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=300&q=80" alt="Panadería El Trigo de Oro" />
+            <div class="history-body">
+              <div class="history-top">
+                <h5>Panadería El Trigo de Oro</h5>
+                <span class="history-badge canceled">Cancelada</span>
+              </div>
+              <p>14 jun · 19:10</p>
+              <div class="history-meta">
+                <span>⭐ 4.6</span>
+                <strong>S/ 12.00</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="ratingScreen" class="pantalla profile-screen" hidden>
+  <div class="screen-header">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="backToProfileFromRating" class="icon-button" type="button">
+        <span class="material-icons">arrow_back</span>
+      </button>
+      <h3>Calificar SamiPacks</h3>
+    </div>
+    <p>Tu opinión ayuda a la comunidad a rescatar comida con confianza.</p>
+  </div>
+
+  <div id="ratingCardsList" class="cards-list" style="margin-top: 14px;">
+    </div>
+</div>
+
+      <div id="helpScreen" class="pantalla profile-screen" hidden>
+        <div class="screen-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="backToProfileFromHelp" class="icon-button" type="button">
+              <span class="material-icons">arrow_back</span>
+            </button>
+            <h3>Centro de Ayuda</h3>
+          </div>
+          <p>¿Tienes dudas o algún problema con tu reserva? Estamos aquí para ayudarte.</p>
+        </div>
+
+        <div class="cards-list" style="margin-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+          <div class="history-card-layout" style="background: #e8f5e9 !important; border: 1px solid #c8e6c9 !important;">
+            <div class="history-card-body">
+              <div class="history-card-top">
+                <h5 style="color: #2e7d32 !important;">Soporte SamiPacks en vivo</h5>
+                <span class="material-icons" style="color: #2e7d32;">chat</span>
+              </div>
+              <p class="history-card-desc">¿Hubo un inconveniente en el local? Escríbenos directamente para solucionarlo.</p>
+              <div style="margin-top: 8px;">
+                <a href="https://wa.me/51900000000" target="_blank" class="submit-rating-btn" style="text-decoration: none; display: inline-block; text-align: center;">
+                  💬 Contactar por WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-title-row" style="margin-top: 8px;">
+            <h4>Preguntas frecuentes</h4>
+          </div>
+
+          <div class="history-card-layout">
+            <div class="history-card-body">
+              <h5>¿Qué contiene un SamiPack Sorpresa?</h5>
+              <p class="history-card-desc" style="margin-top: 4px;">Son productos frescos del día que los establecimientos no lograron vender antes de su hora de cierre, con descuentos de hasta el 70%.</p>
+            </div>
+          </div>
+
+          <div class="history-card-layout">
+            <div class="history-card-body">
+              <h5>¿Cómo realizo la recogida en tienda?</h5>
+              <p class="history-card-desc" style="margin-top: 4px;">Acércate al local dentro del horario establecido y muestra el código alfanumérico o el código QR desde tu pantalla de reservas.</p>
+            </div>
+          </div>
+
+          <div class="history-card-layout">
+            <div class="history-card-body">
+              <h5>¿Puedo cancelar una reserva?</h5>
+              <p class="history-card-desc" style="margin-top: 4px;">Sí, puedes cancelarla desde el detalle de tu reserva activa hasta 1 hora antes del inicio del horario de recogida estipulado.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ==========================================================================
+     NUEVA PANTALLA: MÓDULO DE CONFIGURACIÓN (settingsScreen)
+     ========================================================================== -->
+<div id="settingsScreen" class="pantalla profile-screen" hidden>
+  <div class="screen-header">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button id="backToProfileFromSettings" class="icon-button" type="button">
+        <span class="material-icons">arrow_back</span>
+      </button>
+      <h3>Configuración</h3>
+    </div>
+    <p>Personaliza tu experiencia y gestiona las preferencias de tu cuenta.</p>
+  </div>
+
+  <div class="cards-list" style="margin-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+    
+    <!-- Sección Interfaz -->
+    <div class="section-title-row">
+      <h4>Aspecto de la aplicación</h4>
+    </div>
+
+    <div class="history-card-layout">
+      <div class="history-card-body">
+        <div class="history-card-top">
+          <h5>Modo Oscuro</h5>
+          <!-- Switch deslizable elegante -->
+          <label class="switch-control" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+            <input type="checkbox" id="darkModeToggle" style="opacity: 0; width: 0; height: 0;">
+            <span class="slider-round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 24px;"></span>
+          </label>
+        </div>
+        <p class="history-card-desc">Reduce el brillo de la pantalla y ahorra batería en tu dispositivo móvil.</p>
+      </div>
+    </div>
+
+    <!-- Sección Preferencias -->
+    <div class="section-title-row" style="margin-top: 8px;">
+      <h4>Alertas y Notificaciones</h4>
+    </div>
+
+    <div class="history-card-layout">
+      <div class="history-card-body">
+        <div class="history-card-top">
+          <h5>Avisos de SamiPacks Cercanos</h5>
+          <label class="switch-control" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+            <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
+            <span class="slider-round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--green); transition: .3s; border-radius: 24px;"></span>
+          </label>
+        </div>
+        <p class="history-card-desc">Recibe alertas push instantáneas en tiempo real cuando tus negocios favoritos publiquen packs excedentes.</p>
+      </div>
+    </div>
+
+    <!-- Sección Cuenta -->
+    <div class="section-title-row" style="margin-top: 8px;">
+      <h4>Información de la cuenta</h4>
+    </div>
+
+    <div class="history-card-layout">
+      <div class="history-card-body">
+        <h5>Idioma predeterminado</h5>
+        <div class="history-card-top" style="margin-top: 2px;">
+          <p class="history-card-desc">Español (América Latina)</p>
+          <span class="material-icons" style="font-size: 18px; color: #8c8c8c;">language</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-card-layout">
+      <div class="history-card-body">
+        <h5>Términos de servicio y políticas</h5>
+        <div class="history-card-top" style="margin-top: 2px;">
+          <p class="history-card-desc">Versión del cliente: v1.4.2 (Estable)</p>
+          <span class="material-icons" style="font-size: 18px; color: #8c8c8c;">info_outline</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<section class="admin-screen" id="adminScreen" aria-label="Panel de Administración" hidden>
+        <div class="screen-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div>
+            <h3>Panel de Control</h3>
+            <p id="adminWelcomeTitle">Cargando datos del negocio...</p>
+          </div>
+          <button class="icon-button" id="btnAdminLogout" type="button" aria-label="Cerrar sesión admin">
+            <span class="material-icons" style="color: #ef5350;">logout</span>
+          </button>
+        </div>
+
+        <div class="tabs-row" style="flex-wrap: wrap; row-gap: 8px;">
+          <button class="tab-btn active" id="adminTabBtnPublicar" type="button">Publicar</button>
+          <button class="tab-btn" id="adminTabBtnReservas" type="button">Reservas</button>
+          <button class="tab-btn" id="adminTabBtnHistorial" type="button">Historial</button>
+          <button class="tab-btn" id="adminTabBtnPerfil" type="button">Perfil</button>
+        </div>
+
+        <!-- ==================== PESTAÑA: PUBLICAR NUEVO SAMIPACK ==================== -->
+        <div id="adminTabPublicar">
+
+          <div class="section-title-row">
+            <h4>Mis SamiPacks publicados</h4>
+          </div>
+          <div id="adminMisPacksList" class="cards-list" style="margin-bottom: 24px;"></div>
+
+          <div class="history-banner" style="margin-bottom: 20px;">
+            <h4 style="margin:0; font-size: 15px;" id="adminFormTitulo">PUBLICAR NUEVA OFERTA EXCEDENTE</h4>
+          </div>
+
+          <form id="adminProductForm" class="login-form" style="padding-bottom: 40px;">
+            <input type="hidden" id="adminEditingId" value="" />
+            <label class="input-group">
+              <span class="material-icons">storefront</span>
+              <input type="text" id="adminBusinessName" placeholder="Nombre del negocio" readonly />
+            </label>
+
+            <label class="input-group">
+              <span class="material-icons">fastfood</span>
+              <input type="text" id="adminProductName" placeholder="Nombre del producto (ej: Combo de panes surtidos)" required />
+            </label>
+
+            <label class="input-group">
+              <span class="material-icons">shopping_bag</span>
+              <select id="adminCategory" required>
+                <option value="" disabled selected>Selecciona una categoría</option>
+                <option value="Comidas">Comidas</option>
+                <option value="Cafés">Cafés</option>
+                <option value="Bebidas">Bebidas</option>
+                <option value="Panadería">Panadería</option>
+                <option value="Postres">Postres</option>
+              </select>
+            </label>
+
+            <label class="input-group">
+              <span class="material-icons">description</span>
+              <input type="text" id="adminDescription" placeholder="¿Qué contiene el pack sorpresa?" required />
+            </label>
+
+            <label class="input-group">
+              <span class="material-icons">link</span>
+              <input type="url" id="adminImage" placeholder="URL de la imagen del producto (Unsplash / Web)" required />
+            </label>
+
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
+              <label class="input-group">
+                <span class="material-icons">money_off</span>
+                <input type="number" step="0.1" id="adminOriginalPrice" placeholder="Precio Original" required />
+              </label>
+              <label class="input-group">
+                <span class="material-icons">attach_money</span>
+                <input type="number" step="0.1" id="adminFinalPrice" placeholder="Precio SamiPack" required />
+              </label>
+            </div>
+
+            <label class="input-group">
+              <span class="material-icons">inventory_2</span>
+              <input type="number" id="adminRemaining" placeholder="Packs disp." required />
+            </label>
+
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
+              <label class="input-group">
+                <span class="material-icons">schedule</span>
+                <input type="time" id="adminScheduleStart" required />
+              </label>
+              <label class="input-group">
+                <span class="material-icons">schedule</span>
+                <input type="time" id="adminScheduleEnd" required />
+              </label>
+            </div>
+
+            <label class="input-group">
+              <span class="material-icons">place</span>
+              <input type="text" id="adminAddress" placeholder="Dirección del local (ej: Jr. Lima 123, Ayacucho)" required />
+              <button type="button" class="icon-button" id="adminBuscarCoordsBtn" title="Buscar ubicación de nuevo" aria-label="Buscar ubicación de nuevo">
+                <span class="material-icons">search</span>
+              </button>
+            </label>
+            <input type="hidden" id="adminCoordinates" />
+            <p class="field-error" id="adminCoordsHint" style="margin: -6px 0 12px 4px; color:#8c8c8c;">Buscamos la ubicación automáticamente a partir de la dirección.</p>
+
+            <button class="primary-button" type="submit" id="adminFormSubmitBtn" style="width: 100%; margin-top: 10px;">
+              <span class="material-icons">cloud_upload</span>
+              <span class="btn-label">Publicar en SamiPacks</span>
+            </button>
+            <button class="secondary-button" type="button" id="adminCancelEditBtn" hidden style="width: 100%; margin-top: 10px;">
+              Cancelar edición
+            </button>
+          </form>
+        </div>
+
+        <!-- ==================== PESTAÑA: RESERVAS / CONFIRMAR RECOGIDA ==================== -->
+        <div id="adminTabReservas" hidden>
+          <div class="history-banner" style="margin-bottom: 16px;">
+            <h4 style="margin:0; font-size: 15px;">CONFIRMAR RECOGIDA DE PEDIDO</h4>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <label class="input-group" style="flex:1; margin-bottom:0;">
+              <span class="material-icons">confirmation_number</span>
+              <input type="text" id="adminCodigoInput" placeholder="Escribe o pega el código (ej: SP-84A9QX)" />
+            </label>
+            <button class="primary-button" id="adminConfirmarCodigoBtn" type="button" style="width:auto; padding:0 18px;">
+              Confirmar
+            </button>
+          </div>
+
+          <button class="secondary-button" id="adminEscanearBtn" type="button" style="width:100%; margin-bottom:20px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span class="material-icons">qr_code_scanner</span> Escanear QR con la cámara
+          </button>
+
+          <div class="section-title-row">
+            <h4>Pendientes de recoger</h4>
+          </div>
+          <div id="adminReservasList" class="cards-list" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- ==================== PESTAÑA: HISTORIAL DE VENTAS ==================== -->
+        <div id="adminTabHistorial" hidden>
+          <div class="history-banner" style="margin-bottom: 16px;">
+            <h4 style="margin:0; font-size: 15px;">HISTORIAL DE VENTAS CONFIRMADAS</h4>
+          </div>
+          <div id="adminHistorialList" class="cards-list" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- ==================== PESTAÑA: PERFIL DEL NEGOCIO ==================== -->
+        <div id="adminTabPerfil" hidden>
+          <div class="history-banner" style="margin-bottom: 16px; display:flex; align-items:center; justify-content:space-between;">
+            <h4 style="margin:0; font-size: 15px;">PERFIL DEL NEGOCIO</h4>
+            <button type="button" id="btnAdminPerfilEditar" style="background:none; border:none; color:#fff; display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer; padding:4px;">
+              <span class="material-icons" style="font-size:18px;">edit</span> Editar
+            </button>
+          </div>
+
+          <!-- Vista de solo lectura -->
+          <div class="history-card-layout" id="adminPerfilVista" style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 20px;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom: 10px;">
+              <div class="logo-badge small" aria-hidden="true">
+                <span class="material-icons">storefront</span>
+              </div>
+              <div>
+                <h5 style="margin:0;" id="adminPerfilNegocio">Negocio</h5>
+                <p class="history-card-desc" style="margin:0;">Cuenta de tipo Negocio</p>
+              </div>
+            </div>
+
+            <p class="history-card-desc"><strong>Responsable:</strong> <span id="adminPerfilNombre">-</span></p>
+            <p class="history-card-desc"><strong>Categoría:</strong> <span id="adminPerfilCategoria">-</span></p>
+            <p class="history-card-desc"><strong>Correo:</strong> <span id="adminPerfilCorreo">-</span></p>
+            <p class="history-card-desc"><strong>Teléfono:</strong> <span id="adminPerfilTelefono">-</span></p>
+          </div>
+
+          <!-- Formulario de edición (oculto por defecto) -->
+          <form id="adminPerfilEditForm" hidden style="padding: 20px 0 0;">
+            <label class="input-group" id="adminPerfilEditNegocioGroup">
+              <span class="material-icons">storefront</span>
+              <input type="text" id="adminPerfilEditNegocio" placeholder="Nombre del negocio" required />
+            </label>
+            <p class="field-error" id="adminPerfilEditNegocioError" hidden>Ingresa el nombre de tu negocio.</p>
+
+            <label class="input-group" id="adminPerfilEditCategoriaGroup">
+              <span class="material-icons">shopping_bag</span>
+              <select id="adminPerfilEditCategoria" required>
+                <option value="" disabled>Selecciona una categoría</option>
+                <option value="Comidas">Comidas</option>
+                <option value="Cafés">Cafés</option>
+                <option value="Bebidas">Bebidas</option>
+                <option value="Panadería">Panadería</option>
+                <option value="Postres">Postres</option>
+              </select>
+            </label>
+            <p class="field-error" id="adminPerfilEditCategoriaError" hidden>Selecciona una categoría.</p>
+
+            <label class="input-group" id="adminPerfilEditResponsableGroup">
+              <span class="material-icons">person_outline</span>
+              <input type="text" id="adminPerfilEditResponsable" placeholder="Responsable del negocio" required />
+            </label>
+            <p class="field-error" id="adminPerfilEditResponsableError" hidden>Ingresa el nombre del responsable.</p>
+
+            <label class="input-group" id="adminPerfilEditTelefonoGroup">
+              <span class="material-icons">call</span>
+              <input type="tel" id="adminPerfilEditTelefono" placeholder="Teléfono de contacto" required />
+            </label>
+            <p class="field-error" id="adminPerfilEditTelefonoError" hidden>Ingresa un teléfono de contacto.</p>
+
+            <div style="display:flex; gap:10px; margin-top:8px;">
+              <button type="button" class="secondary-button" id="btnAdminPerfilCancelar" style="flex:1;">Cancelar</button>
+              <button type="submit" class="primary-button" id="btnAdminPerfilGuardar" style="flex:1;">
+                <span class="btn-label">Guardar cambios</span>
+              </button>
+            </div>
+          </form>
+
+          <button class="secondary-button" id="btnAdminLogoutPerfil" type="button" style="width:100%; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:8px; color:#ef5350;">
+            <span class="material-icons">logout</span> Cerrar sesión
+          </button>
+        </div>
+
+        <!-- ==================== MODAL: ESCÁNER DE CÁMARA ==================== -->
+        <div id="adminScannerModal" hidden style="position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.85); align-items:center; justify-content:center;">
+          <div style="background:#000; border-radius:16px; padding:16px; width:90%; max-width:360px; text-align:center; position:relative;">
+            <button id="adminScannerCloseBtn" type="button" class="circle-btn" style="position:absolute; top:-14px; right:-14px; background:#fff;">
+              <span class="material-icons">close</span>
+            </button>
+            <p style="color:#fff; margin-bottom:10px; font-size:13px;">Apunta la cámara al código QR del cliente</p>
+            <video id="adminScannerVideo" playsinline autoplay muted style="width:100%; border-radius:10px; background:#111;"></video>
+            <canvas id="adminScannerCanvas" hidden></canvas>
+          </div>
+        </div>
+      </section>
+      
+      <nav class="bottom-nav" id="navbar-inferior" aria-label="Navegación inferior">
+        <button class="nav-item active" data-view="home" type="button">
+          <span class="material-icons">home</span>
+          <span>Home</span>
+        </button>
+        <button class="nav-item" data-view="reservations" type="button">
+          <span class="material-icons">event</span>
+          <span>Reservations</span>
+        </button>
+        <button class="nav-item" data-view="profile" type="button">
+          <span class="material-icons">person</span>
+          <span>Profile</span>
+        </button>
+      </nav>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+    <script src="app.js?v=20260706"></script>
+  </body>
+</html>
