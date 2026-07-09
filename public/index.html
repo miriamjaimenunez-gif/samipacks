@@ -101,7 +101,7 @@
             </label>
             <p class="field-error" id="passwordError" hidden>La contraseña es obligatoria.</p>
 
-            <a href="#" class="forgot-link">¿La olvidaste?</a>
+            <a href="#" class="forgot-link" id="forgotPasswordLink">¿La olvidaste?</a>
 
             <button class="primary-button" type="submit" id="loginSubmitBtn">
               <span class="btn-label">Iniciar sesión</span>
@@ -170,13 +170,49 @@
             <p class="field-error" id="registerPasswordConfirmError" hidden>Las contraseñas no coinciden.</p>
 
             <button class="primary-button" type="submit" id="registerSubmitBtn">
-              <span class="btn-label">Crear cuenta</span>
+              <span class="btn-label">Continuar</span>
               <span class="material-icons btn-arrow">arrow_forward</span>
             </button>
           </form>
 
           <p class="signup-link">
             ¿Ya tienes cuenta? <a href="#" id="goToLoginLink">Iniciar sesión</a>
+          </p>
+        </div>
+
+        <!-- Paso intermedio del registro: confirmar que el correo es real
+             ingresando el código de 6 dígitos que se le envió -->
+        <div class="login-card" id="registerVerifyCard" hidden>
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">mark_email_read</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <h3>Confirma tu correo</h3>
+          <p class="welcome-text">
+            Te enviamos un código de 6 dígitos a <strong id="registerVerifyEmailLabel"></strong>. Ingrésalo para activar tu cuenta.
+          </p>
+
+          <form class="login-form" id="registerVerifyForm" novalidate>
+            <label class="input-group code-input-group" id="registerCodeGroup">
+              <span class="material-icons">pin</span>
+              <input type="text" id="registerCode" placeholder="000000" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required />
+            </label>
+            <p class="field-error" id="registerCodeError" hidden>El código no es válido.</p>
+
+            <button class="primary-button" type="submit" id="registerVerifyBtn">
+              <span class="btn-label">Verificar y crear cuenta</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+
+          <p class="signup-link">
+            <a href="#" id="resendRegisterCodeLink">Reenviar código</a>
+          </p>
+          <p class="signup-link">
+            <a href="#" id="backToRegisterFormLink">Cambiar datos</a>
           </p>
         </div>
 
@@ -228,6 +264,112 @@
 
             <button class="primary-button" type="submit" id="registerBusinessSubmitBtn">
               <span class="btn-label">Guardar y continuar</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Recuperar contraseña — Paso 1: pedir el correo para enviar el código -->
+        <div class="login-card" id="forgotPasswordCard" hidden>
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">eco</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <h3>Recuperar contraseña</h3>
+          <p class="welcome-text">
+            Ingresa el correo con el que te registraste. Te enviaremos un código para verificar tu identidad.
+          </p>
+
+          <form class="login-form" id="forgotPasswordForm" novalidate>
+            <label class="input-group" id="forgotEmailGroup">
+              <span class="material-icons">mail_outline</span>
+              <input type="email" id="forgotEmail" placeholder="tu@email.com" autocomplete="email" required />
+            </label>
+            <p class="field-error" id="forgotEmailError" hidden>Ingresa un correo válido.</p>
+
+            <p class="field-error" id="forgotGeneralError" hidden>No existe ninguna cuenta con ese correo.</p>
+
+            <button class="primary-button" type="submit" id="forgotSubmitBtn">
+              <span class="btn-label">Enviar código</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+
+          <p class="signup-link">
+            <a href="#" id="backToLoginFromForgotLink">Volver a iniciar sesión</a>
+          </p>
+        </div>
+
+        <!-- Recuperar contraseña — Paso 2: ingresar el código recibido por correo -->
+        <div class="login-card" id="forgotVerifyCard" hidden>
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">mark_email_read</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <h3>Revisa tu correo</h3>
+          <p class="welcome-text">
+            Te enviamos un código de 6 dígitos a <strong id="forgotVerifyEmailLabel"></strong>. Ingrésalo para continuar.
+          </p>
+
+          <form class="login-form" id="forgotVerifyForm" novalidate>
+            <label class="input-group code-input-group" id="forgotCodeGroup">
+              <span class="material-icons">pin</span>
+              <input type="text" id="forgotCode" placeholder="000000" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" required />
+            </label>
+            <p class="field-error" id="forgotCodeError" hidden>El código no es válido.</p>
+
+            <button class="primary-button" type="submit" id="forgotVerifyBtn">
+              <span class="btn-label">Verificar código</span>
+              <span class="material-icons btn-arrow">arrow_forward</span>
+            </button>
+          </form>
+
+          <p class="signup-link">
+            <a href="#" id="resendForgotCodeLink">Reenviar código</a>
+          </p>
+          <p class="signup-link">
+            <a href="#" id="backToForgotEmailLink">Cambiar correo</a>
+          </p>
+        </div>
+
+        <!-- Recuperar contraseña — Paso 3: crear la contraseña nueva -->
+        <div class="login-card" id="resetPasswordCard" hidden>
+          <div class="brand-header">
+            <div class="logo-badge small" aria-hidden="true">
+              <span class="material-icons">eco</span>
+            </div>
+            <h2>SamiPacks</h2>
+          </div>
+
+          <h3>Crea tu contraseña nueva</h3>
+          <p class="welcome-text" id="resetPasswordSubtitle">
+            Listo, verificamos tu identidad. Ahora elige una contraseña nueva.
+          </p>
+
+          <form class="login-form" id="resetPasswordForm" novalidate>
+            <label class="input-group password-group" id="resetPasswordGroup">
+              <span class="material-icons">lock_outline</span>
+              <input type="password" id="resetPassword" placeholder="Contraseña nueva (mín. 6 caracteres)" autocomplete="new-password" required />
+              <button class="icon-button" type="button" id="toggleResetPasswordBtn" aria-label="Mostrar contraseña" aria-pressed="false">
+                <span class="material-icons">visibility</span>
+              </button>
+            </label>
+            <p class="field-error" id="resetPasswordError" hidden>La contraseña debe tener al menos 6 caracteres.</p>
+
+            <label class="input-group" id="resetPasswordConfirmGroup">
+              <span class="material-icons">lock_outline</span>
+              <input type="password" id="resetPasswordConfirm" placeholder="Confirmar contraseña" autocomplete="new-password" required />
+            </label>
+            <p class="field-error" id="resetPasswordConfirmError" hidden>Las contraseñas no coinciden.</p>
+
+            <button class="primary-button" type="submit" id="resetSubmitBtn">
+              <span class="btn-label">Guardar contraseña</span>
               <span class="material-icons btn-arrow">arrow_forward</span>
             </button>
           </form>
@@ -546,6 +688,27 @@
             <div class="ticket-row">
               <span>LÍMITE RECOGIDA</span>
               <strong class="limit-text" id="ticketLimit">Hoy, 19:00h</strong>
+            </div>
+          </div>
+
+          <!-- Datos textuales del negocio: lo más importante para que el cliente sepa
+               dónde y cómo llegar a recoger su pack, sin tener que salir de la boleta -->
+          <div class="ticket-details" id="ticketBusinessInfo" style="margin-top: 10px;">
+            <div class="ticket-row">
+              <span>📍 Dirección</span>
+              <strong id="ticketBusinessAddress">-</strong>
+            </div>
+            <div class="ticket-row">
+              <span>🏷️ Categoría</span>
+              <strong id="ticketBusinessCategory">-</strong>
+            </div>
+            <div class="ticket-row">
+              <span>🕒 Horario de atención</span>
+              <strong id="ticketBusinessSchedule">-</strong>
+            </div>
+            <div class="ticket-row">
+              <span>📞 Teléfono</span>
+              <strong id="ticketBusinessPhone">-</strong>
             </div>
           </div>
 
@@ -958,10 +1121,24 @@
               <input type="text" id="adminDescription" placeholder="¿Qué contiene el pack sorpresa?" required />
             </label>
 
-            <label class="input-group">
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <button type="button" class="secondary-button active-toggle" id="adminImageModeUrlBtn" style="flex:1; padding:10px; font-size:13px;">Pegar URL</button>
+              <button type="button" class="secondary-button" id="adminImageModeFileBtn" style="flex:1; padding:10px; font-size:13px;">Subir foto</button>
+            </div>
+
+            <label class="input-group" id="adminImageUrlGroup">
               <span class="material-icons">link</span>
-              <input type="url" id="adminImage" placeholder="URL de la imagen del producto (Unsplash / Web)" required />
+              <input type="url" id="adminImageUrlInput" placeholder="URL de la imagen del producto (Unsplash / Web)" />
             </label>
+
+            <label class="input-group" id="adminImageFileGroup" style="display:none;">
+              <span class="material-icons">image</span>
+              <input type="file" id="adminImageFileInput" accept="image/*" />
+            </label>
+
+            <img id="adminImagePreview" src="" alt="Vista previa de la imagen" style="display:none; width:100%; max-height:160px; object-fit:cover; border-radius:12px; margin-bottom:12px;" />
+
+            <input type="hidden" id="adminImage" value="" />
 
             <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px;">
               <label class="input-group">
@@ -1071,6 +1248,21 @@
             <p class="history-card-desc"><strong>Teléfono:</strong> <span id="adminPerfilTelefono">-</span></p>
           </div>
 
+          <!-- ==================== NOTIFICACIONES PUSH DEL NEGOCIO ==================== -->
+          <div class="section-title-row" style="margin-top: 8px; width:100%;">
+            <h4>Notificaciones</h4>
+          </div>
+          <div class="history-card-layout" style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 20px; width:100%;">
+            <div class="history-card-top" style="width:100%;">
+              <h5 style="margin:0;">Avisarme de nuevas reservas</h5>
+              <label class="switch-control" style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                <input type="checkbox" id="adminNotifToggle" style="opacity: 0; width: 0; height: 0;">
+                <span class="slider-round" id="adminNotifSlider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 24px;"></span>
+              </label>
+            </div>
+            <p class="history-card-desc" id="adminNotifStatus">Recibe una notificación push en este dispositivo apenas un cliente reserve uno de tus packs, aunque tengas la app cerrada.</p>
+          </div>
+
           <!-- Formulario de edición (oculto por defecto) -->
           <form id="adminPerfilEditForm" hidden style="padding: 20px 0 0;">
             <label class="input-group" id="adminPerfilEditNegocioGroup">
@@ -1146,7 +1338,7 @@
       </nav>
     </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+    <script src="vendor/jsQR.js"></script>
     <script src="app.js?v=20260706"></script>
   </body>
 </html>
