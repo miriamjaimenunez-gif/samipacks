@@ -175,7 +175,8 @@ if (gmailUser && gmailAppPassword) {
         port: 587,
         secure: false, // STARTTLS: la conexión empieza sin cifrar y luego se actualiza a TLS
         auth: { user: gmailUser, pass: gmailAppPassword },
-        connectionTimeout: 10000 // falla rápido (10s) en vez de colgarse mucho tiempo
+        connectionTimeout: 10000, // falla rápido (10s) en vez de colgarse mucho tiempo
+        family: 4 // fuerza IPv4: Render no tiene salida por IPv6 y Node probaba esa ruta primero (ENETUNREACH)
     });
 } else {
     console.warn('⚠️ Faltan GMAIL_USER / GMAIL_APP_PASSWORD en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
