@@ -7,6 +7,13 @@ const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const dns = require('dns');
+
+// Render no tiene salida a internet por IPv6, pero por defecto Node intenta
+// primero la dirección IPv6 que devuelve el DNS (ej. para smtp.gmail.com),
+// lo que provocaba "ENETUNREACH". Esto fuerza a que TODO el proceso resuelva
+// nombres de dominio priorizando IPv4 primero.
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 app.use(cors());
@@ -176,7 +183,8 @@ if (gmailUser && gmailAppPassword) {
         secure: false, // STARTTLS: la conexión empieza sin cifrar y luego se actualiza a TLS
         auth: { user: gmailUser, pass: gmailAppPassword },
         connectionTimeout: 10000, // falla rápido (10s) en vez de colgarse mucho tiempo
-        family: 4 // fuerza IPv4: Render no tiene salida por IPv6 y Node probaba esa ruta primero (ENETUNREACH)
+        family: 4, // fuerza IPv4: Render no tiene salida por IPv6 y Node probaba esa ruta primero (ENETUNREACH)
+        lookup: (hostname, options, callback) => dns.lookup(hostname, { family: 4 }, callback) // respaldo explícito, por si "family" no bastaba
     });
 } else {
     console.warn('⚠️ Faltan GMAIL_USER / GMAIL_APP_PASSWORD en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
