@@ -178,6 +178,29 @@ input {
   flex-direction: column;
 }
 
+/* Input del código de 6 dígitos (registro / recuperar contraseña):
+   centrado y con separación entre números para que se lea como un OTP. */
+.code-input-group input {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 10px;
+}
+
+/* Estado del link "Reenviar código" mientras corre la cuenta regresiva de 30s */
+.link-disabled {
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+/* Sin esto, el atributo "hidden" no gana contra el display:flex de arriba
+   (una regla de autor le gana a la regla interna del navegador para
+   [hidden], sin importar el orden), y todas las tarjetas de login/registro/
+   olvidé-contraseña quedaban visibles y apiladas dentro del mismo scroll. */
+.login-card[hidden] {
+  display: none !important;
+}
+
 .home-container {
   width: 100%;
   display: flex;
