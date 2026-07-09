@@ -5,15 +5,16 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
-const nodemailer = require('nodemailer');
+// (Antes usábamos nodemailer + Gmail vía SMTP directo. En Render la conexión
+// SMTP fallaba de forma intermitente con ENETUNREACH/ETIMEDOUT: Google
+// devuelve a veces una IP IPv4 y a veces una IPv6 para smtp.gmail.com, y la
+// ruta de red de Render hacia esa IPv6 no funciona, así que a veces
+// funcionaba y a veces no, dependiendo de qué IP tocara en ese momento.
+// Ahora usamos Brevo, que envía el correo con una llamada HTTPS normal (el
+// mismo tipo de conexión que carga cualquier página web) en vez de abrir una
+// conexión SMTP directa a una IP de Google, así que no depende de esa
+// variabilidad de red.)
 const crypto = require('crypto');
-const dns = require('dns');
-
-// Render no tiene salida a internet por IPv6, pero por defecto Node intenta
-// primero la dirección IPv6 que devuelve el DNS (ej. para smtp.gmail.com),
-// lo que provocaba "ENETUNREACH". Esto fuerza a que TODO el proceso resuelva
-// nombres de dominio priorizando IPv4 primero.
-dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 app.use(cors());
@@ -158,36 +159,21 @@ function notificarNuevaReservaAlNegocio(negocio, payload) {
 }
 
 // ==========================================================================
-// 📧 ENVÍO DE CORREOS (Gmail con contraseña de aplicación)
+// 📧 ENVÍO DE CORREOS (Brevo, vía API HTTP)
 // ==========================================================================
 // Se usa para dos cosas: confirmar que el correo del registro existe/
 // funciona, y para el código de recuperación de contraseña.
 //
-// GMAIL_USER es la cuenta de Gmail que envía los correos (ej. tuapp@gmail.com)
-// GMAIL_APP_PASSWORD es una "contraseña de aplicación" de 16 caracteres que
-// se genera en https://myaccount.google.com/apppasswords (requiere tener la
-// verificación en 2 pasos activada en esa cuenta de Gmail). NO es la
-// contraseña normal de la cuenta de Gmail.
-const gmailUser = process.env.GMAIL_USER;
-const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+// BREVO_API_KEY se genera gratis en https://app.brevo.com/settings/keys/api
+// (Settings > SMTP & API > API Keys). BREVO_SENDER_EMAIL debe ser un correo
+// que hayas verificado en Brevo (Settings > Senders, Domains, IPs > Senders
+// > Add a sender; te llega un código de 6 dígitos a ese correo para
+// confirmarlo) — puede ser tu propio Gmail, no hace falta dominio propio.
+const brevoApiKey = process.env.BREVO_API_KEY;
+const brevoSenderEmail = process.env.BREVO_SENDER_EMAIL;
 
-let mailTransporter = null;
-if (gmailUser && gmailAppPassword) {
-    // Antes usábamos { service: 'gmail' }, que internamente conecta por el
-    // puerto 465 (SSL). En Render eso daba "Connection timeout" (ETIMEDOUT).
-    // Forzamos aquí el puerto 587 con STARTTLS, que en muchos hosts cloud
-    // tiene mejor suerte saliendo hacia smtp.gmail.com.
-    mailTransporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // STARTTLS: la conexión empieza sin cifrar y luego se actualiza a TLS
-        auth: { user: gmailUser, pass: gmailAppPassword },
-        connectionTimeout: 10000, // falla rápido (10s) en vez de colgarse mucho tiempo
-        family: 4, // fuerza IPv4: Render no tiene salida por IPv6 y Node probaba esa ruta primero (ENETUNREACH)
-        lookup: (hostname, options, callback) => dns.lookup(hostname, { family: 4 }, callback) // respaldo explícito, por si "family" no bastaba
-    });
-} else {
-    console.warn('⚠️ Faltan GMAIL_USER / GMAIL_APP_PASSWORD en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
+if (!brevoApiKey || !brevoSenderEmail) {
+    console.warn('⚠️ Faltan BREVO_API_KEY / BREVO_SENDER_EMAIL en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
 }
 
 // Código numérico de 6 dígitos (con ceros a la izquierda si hace falta, ej. "004821")
@@ -195,26 +181,42 @@ function generarCodigoVerificacion() {
     return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
 }
 
-function enviarCorreoConCodigo({ destinatario, asunto, tituloHtml, textoHtml, codigo }) {
-    if (!mailTransporter) {
-        return Promise.reject(new Error('El servidor de correo no está configurado (faltan GMAIL_USER / GMAIL_APP_PASSWORD).'));
+async function enviarCorreoConCodigo({ destinatario, asunto, tituloHtml, textoHtml, codigo }) {
+    if (!brevoApiKey || !brevoSenderEmail) {
+        throw new Error('El servidor de correo no está configurado (faltan BREVO_API_KEY / BREVO_SENDER_EMAIL).');
     }
-    return mailTransporter.sendMail({
-        from: `"SamiPacks" <${gmailUser}>`,
-        to: destinatario,
-        subject: asunto,
-        html: `
-            <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #2b2b2b;">
-                <h2 style="color: #4caf50; margin-bottom: 4px;">SamiPacks</h2>
-                <h3 style="margin-top: 0;">${tituloHtml}</h3>
-                <p>${textoHtml}</p>
-                <div style="background: #f2f7f2; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2e7d32;">${codigo}</span>
+
+    const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'api-key': brevoApiKey,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            sender: { name: 'SamiPacks', email: brevoSenderEmail },
+            to: [{ email: destinatario }],
+            subject: asunto,
+            htmlContent: `
+                <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #2b2b2b;">
+                    <h2 style="color: #4caf50; margin-bottom: 4px;">SamiPacks</h2>
+                    <h3 style="margin-top: 0;">${tituloHtml}</h3>
+                    <p>${textoHtml}</p>
+                    <div style="background: #f2f7f2; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
+                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2e7d32;">${codigo}</span>
+                    </div>
+                    <p style="font-size: 13px; color: #777;">Este código vence en 10 minutos. Si tú no solicitaste esto, puedes ignorar este correo.</p>
                 </div>
-                <p style="font-size: 13px; color: #777;">Este código vence en 10 minutos. Si tú no solicitaste esto, puedes ignorar este correo.</p>
-            </div>
-        `
+            `
+        })
     });
+
+    if (!respuesta.ok) {
+        const detalle = await respuesta.text().catch(() => '');
+        throw new Error(`Brevo respondió ${respuesta.status}: ${detalle}`);
+    }
+
+    return respuesta.json();
 }
 
 // Limpia códigos previos no usados del mismo correo+tipo (evita que queden
