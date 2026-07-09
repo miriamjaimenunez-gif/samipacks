@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const API_URL = '/api';
   let usuarioLogueado = null; // Guardará el usuario de la BD
   let cantidadSeleccionada = 1; // Manejo dinámico de cantidad
+  let reservaActivaId = null; // ID de la reserva mostrada en la boleta (para poder cancelarla)
+  let ticketCoordenadasActuales = null; // Coordenadas del negocio de la boleta que se está viendo ahora
 
   // 🌟 FUNCIÓN ÚNICA PARA OBTENER EL ID DE USUARIO
   function obtenerIdUsuarioValido() {
@@ -50,9 +52,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const ticketBusiness = document.getElementById('ticketBusiness');
   const ticketDate = document.getElementById('ticketDate');
   const ticketLimit = document.getElementById('ticketLimit');
+  const ticketBusinessAddress = document.getElementById('ticketBusinessAddress');
+  const ticketBusinessCategory = document.getElementById('ticketBusinessCategory');
+  const ticketBusinessSchedule = document.getElementById('ticketBusinessSchedule');
+  const ticketBusinessPhone = document.getElementById('ticketBusinessPhone');
+
+  // Vuelca los datos del negocio en la boleta. Recibe un objeto "flexible"
+  // porque esta info puede venir de dos lugares distintos: el "pack" recién
+  // reservado (con nombres en inglés: address/category/schedule) o la fila
+  // ya guardada en la tabla "reservas" (en español: direccion_negocio, etc).
+  function pintarDatosNegocioEnTicket({ direccion, categoria, horario, telefono }) {
+    if (ticketBusinessAddress) ticketBusinessAddress.textContent = direccion || 'No disponible';
+    if (ticketBusinessCategory) ticketBusinessCategory.textContent = categoria || 'No disponible';
+    if (ticketBusinessSchedule) ticketBusinessSchedule.textContent = horario || 'No disponible';
+    if (ticketBusinessPhone) ticketBusinessPhone.textContent = telefono || 'No disponible';
+  }
   const ticketLocationBtn = document.getElementById('ticketLocationBtn');
   const ticketShareBtn = document.getElementById('ticketShareBtn');
   const ticketSaveBtn = document.querySelector('.ticket-save-btn');
+  const ticketPickupActions = document.getElementById('ticketPickupActions');
+  const cancelReservationBtn = document.getElementById('cancelReservationBtn');
+  const confirmPickupBtn = document.getElementById('confirmPickupBtn');
+
+  // Muestra el bloque de acciones de la boleta, pero solo con el botón
+  // "Cancelar" habilitado. "Confirmar recogida" es una acción del negocio
+  // (se hace escaneando el QR desde el panel admin), no del cliente, así
+  // que la ocultamos aquí para no mostrar un botón que no hace nada.
+  function mostrarAccionesBoletaPendiente() {
+    if (confirmPickupBtn) confirmPickupBtn.hidden = true;
+    if (ticketPickupActions) ticketPickupActions.hidden = false;
+  }
   const navItems = document.querySelectorAll('.nav-item');
   const profileItems = document.querySelectorAll('.profile-item');
 
@@ -250,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adminScreen) adminScreen.hidden = view !== 'admin';
 
     updateBottomNav(currentNavView);
+    guardarVistaActual(view);
   }
   // 🌟 Muestra la pantalla de "¿Cómo deseas ingresar hoy?" (roleScreen), oculta el splash
   function mostrarPantallaDeRol() {
@@ -266,15 +296,124 @@ document.addEventListener('DOMContentLoaded', () => {
     gestionarVisibilidadNavbar('login');
   }
 
+  // ==========================================================================
+  // 🔐 SESIÓN PERSISTENTE: guardamos al usuario logueado en localStorage para
+  // que, al refrescar la página (F5) o volver a abrir la app, no se pierda la
+  // sesión y tengamos que pasar de nuevo por splash → selección de rol → login.
+  // ==========================================================================
+  const SESION_STORAGE_KEY = 'samipacks_sesion';
+  const VISTA_STORAGE_KEY = 'samipacks_ultima_vista';
+  const RESERVAS_TAB_STORAGE_KEY = 'samipacks_ultima_reservas_tab';
+
+  // Solo estas vistas se restauran al refrescar: son pantallas "estables" que
+  // no dependen de datos que solo existen en memoria durante la sesión activa
+  // (por ejemplo 'detail', 'confirmation' y 'ticket' necesitan un pack o una
+  // reserva recién seleccionados, así que esas SIEMPRE vuelven a 'home').
+  const VISTAS_RESTAURABLES = ['home', 'reservations', 'profile', 'settings', 'help', 'admin'];
+
+  function guardarSesion(usuario) {
+    try {
+      localStorage.setItem(SESION_STORAGE_KEY, JSON.stringify(usuario));
+    } catch (err) {
+      console.warn('No se pudo guardar la sesión en localStorage:', err);
+    }
+  }
+
+  function borrarSesionGuardada() {
+    try {
+      localStorage.removeItem(SESION_STORAGE_KEY);
+      localStorage.removeItem(VISTA_STORAGE_KEY);
+      localStorage.removeItem(RESERVAS_TAB_STORAGE_KEY);
+    } catch (err) {
+      console.warn('No se pudo borrar la sesión guardada:', err);
+    }
+  }
+
+  function obtenerSesionGuardada() {
+    try {
+      const raw = localStorage.getItem(SESION_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.warn('Sesión guardada corrupta, se ignora:', err);
+      return null;
+    }
+  }
+
+  function guardarVistaActual(view) {
+    if (!VISTAS_RESTAURABLES.includes(view)) return;
+    try {
+      localStorage.setItem(VISTA_STORAGE_KEY, view);
+    } catch (err) {
+      console.warn('No se pudo guardar la última vista:', err);
+    }
+  }
+
+  function guardarTabReservas(tab) {
+    try {
+      localStorage.setItem(RESERVAS_TAB_STORAGE_KEY, tab);
+    } catch (err) {
+      console.warn('No se pudo guardar la pestaña de reservas:', err);
+    }
+  }
+
+  // Restaura la sesión y, si es posible, la pantalla exacta donde el usuario
+  // se había quedado (en vez de mandarlo siempre a 'home').
+  function restaurarSesionYVista(usuario) {
+    // IMPORTANTE: leemos la vista guardada ANTES de iniciar sesión, porque
+    // iniciarSesionConDatos() llama a setActiveView('home') internamente, y
+    // eso sobrescribiría el valor guardado con 'home' antes de poder leerlo.
+    let vistaGuardada = null;
+    let tabGuardado = null;
+    try {
+      vistaGuardada = localStorage.getItem(VISTA_STORAGE_KEY);
+      tabGuardado = localStorage.getItem(RESERVAS_TAB_STORAGE_KEY);
+    } catch (err) { /* ignorar */ }
+
+    iniciarSesionConDatos(usuario); // deja al cliente en 'home' o al negocio en el panel
+
+    if (usuario.rol === 'negocio') return; // el panel de negocio ya queda listo
+
+    if (!vistaGuardada || vistaGuardada === 'home') return;
+
+    if (vistaGuardada === 'reservations') {
+      mostrarBotonVolverReservas('home');
+      if (tabGuardado === 'historial') {
+        cargarHistorialDesdeBaseDatos();
+      } else {
+        cargarReservasDesdeBaseDatos();
+      }
+      setActiveView('reservations');
+    } else if (['profile', 'settings', 'help'].includes(vistaGuardada)) {
+      setActiveView(vistaGuardada);
+    }
+  }
+
   if (appShell) {
     gestionarVisibilidadNavbar('login');
-    window.setTimeout(() => {
-      if (roleScreen) {
-        mostrarPantallaDeRol();
-      } else {
-        appShell.classList.add('show-login');
-      }
-    }, 1800);
+    const sesionGuardada = obtenerSesionGuardada();
+
+    if (sesionGuardada) {
+      // Ya había una sesión activa en este dispositivo: saltamos el splash
+      // largo y el flujo de rol/login, y entramos directo a la vista que le
+      // corresponde (home de cliente o panel de negocio).
+      window.setTimeout(() => {
+        const splashScreen = document.querySelector('.splash-screen');
+        if (splashScreen) {
+          splashScreen.style.opacity = '0';
+          splashScreen.style.pointerEvents = 'none';
+          splashScreen.hidden = true;
+        }
+        restaurarSesionYVista(sesionGuardada);
+      }, 600);
+    } else {
+      window.setTimeout(() => {
+        if (roleScreen) {
+          mostrarPantallaDeRol();
+        } else {
+          appShell.classList.add('show-login');
+        }
+      }, 1800);
+    }
   }
 
   // 🌟 Selección de rol: el cliente y el negocio comparten el mismo formulario de
@@ -683,7 +822,10 @@ async function registrarReservaEnBaseDatos(pack) {
       precio_total: totalCalculado,
       codigo_alfanumerico: code,
       qr_data: `SamiPacks-${code}`,
-      image: pack.image
+      image: pack.image,
+      direccion_negocio: pack.address,
+      horario_negocio: pack.schedule,
+      coordenadas_negocio: pack.coordinates
     };
 
     try {
@@ -708,10 +850,28 @@ async function registrarReservaEnBaseDatos(pack) {
         if (ticketBusiness) ticketBusiness.textContent = pack.business;
         if (ticketDate) ticketDate.textContent = 'Hoy';
         if (ticketLimit) ticketLimit.textContent = `Hoy, ${pack.schedule.split(' - ')[1]}`;
+        pintarDatosNegocioEnTicket({
+          direccion: pack.address,
+          categoria: data.categoria_negocio || pack.category,
+          horario: pack.schedule,
+          telefono: data.telefono_negocio
+        });
+        ticketCoordenadasActuales = pack.coordinates || null;
+
+        // Reserva recién creada: queda "Pendiente de recoger", así que se puede cancelar
+        reservaActivaId = data.insertId;
+        mostrarAccionesBoletaPendiente();
 
         setActiveView('ticket');
       } else {
-        alert('Error al registrar la reserva en MySQL');
+        // Si el backend nos dio un mensaje específico (ej. "sin stock suficiente"),
+        // lo mostramos tal cual; si no, usamos un mensaje genérico de respaldo.
+        alert(data.message || 'Error al registrar la reserva en MySQL');
+
+        // Refrescamos el stock real desde la BD para que la tarjeta del pack
+        // muestre las unidades disponibles actualizadas (por si alguien más
+        // reservó justo antes y ya no queda lo que el usuario veía en pantalla).
+        cargarSamipacksDesdeBD();
       }
     } catch (err) {
       console.error(err);
@@ -734,7 +894,11 @@ async function registrarReservaEnBaseDatos(pack) {
   // ---- Registro (crear cuenta nueva) ----
   const loginCard = document.getElementById('loginCard');
   const registerCard = document.getElementById('registerCard');
+  const registerVerifyCard = document.getElementById('registerVerifyCard');
   const registerBusinessCard = document.getElementById('registerBusinessCard');
+  const forgotPasswordCard = document.getElementById('forgotPasswordCard');
+  const forgotVerifyCard = document.getElementById('forgotVerifyCard');
+  const resetPasswordCard = document.getElementById('resetPasswordCard');
   const goToRegisterLink = document.getElementById('goToRegisterLink');
   const goToLoginLink = document.getElementById('goToLoginLink');
   const registerForm = document.getElementById('registerForm');
@@ -756,7 +920,7 @@ async function registrarReservaEnBaseDatos(pack) {
   let usuarioPendienteNegocio = null; // cuenta recién creada, en espera de completar los datos del negocio
 
   function mostrarCardDeAuth(card) {
-    [loginCard, registerCard, registerBusinessCard].forEach((c) => { if (c) c.hidden = (c !== card); });
+    [loginCard, registerCard, registerVerifyCard, registerBusinessCard, forgotPasswordCard, forgotVerifyCard, resetPasswordCard].forEach((c) => { if (c) c.hidden = (c !== card); });
   }
 
   if (goToRegisterLink) {
@@ -773,6 +937,257 @@ async function registrarReservaEnBaseDatos(pack) {
     });
   }
 
+  // ==========================================================================
+  // 🔑 RECUPERAR CONTRASEÑA (correo real: se envía un código de 6 dígitos)
+  // ==========================================================================
+  const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+  const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+  const forgotEmailInput = document.getElementById('forgotEmail');
+  const forgotEmailGroup = document.getElementById('forgotEmailGroup');
+  const forgotEmailError = document.getElementById('forgotEmailError');
+  const forgotGeneralError = document.getElementById('forgotGeneralError');
+  const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+  const backToLoginFromForgotLink = document.getElementById('backToLoginFromForgotLink');
+
+  const forgotVerifyForm = document.getElementById('forgotVerifyForm');
+  const forgotCodeInput = document.getElementById('forgotCode');
+  const forgotCodeGroup = document.getElementById('forgotCodeGroup');
+  const forgotCodeError = document.getElementById('forgotCodeError');
+  const forgotVerifyEmailLabel = document.getElementById('forgotVerifyEmailLabel');
+  const forgotVerifyBtn = document.getElementById('forgotVerifyBtn');
+  const resendForgotCodeLink = document.getElementById('resendForgotCodeLink');
+  const backToForgotEmailLink = document.getElementById('backToForgotEmailLink');
+
+  const resetPasswordForm = document.getElementById('resetPasswordForm');
+  const resetPasswordInput = document.getElementById('resetPassword');
+  const resetPasswordConfirmInput = document.getElementById('resetPasswordConfirm');
+  const resetPasswordGroup = document.getElementById('resetPasswordGroup');
+  const resetPasswordConfirmGroup = document.getElementById('resetPasswordConfirmGroup');
+  const resetPasswordError = document.getElementById('resetPasswordError');
+  const resetPasswordConfirmError = document.getElementById('resetPasswordConfirmError');
+  const resetSubmitBtn = document.getElementById('resetSubmitBtn');
+  const toggleResetPasswordBtn = document.getElementById('toggleResetPasswordBtn');
+
+  // Correo en proceso de recuperación, y el código ya verificado (el paso 3
+  // vuelve a mandarlo al backend para no confiar solo en el paso 2).
+  let recuperacionCorreo = null;
+  let recuperacionCodigo = null;
+
+  function limpiarErroresForgot() {
+    forgotEmailGroup?.classList.remove('input-error');
+    [forgotEmailError, forgotGeneralError].forEach((e) => e && (e.hidden = true));
+  }
+
+  if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (forgotPasswordForm) forgotPasswordForm.reset();
+      limpiarErroresForgot();
+      mostrarCardDeAuth(forgotPasswordCard);
+    });
+  }
+
+  if (backToLoginFromForgotLink) {
+    backToLoginFromForgotLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      mostrarCardDeAuth(loginCard);
+    });
+  }
+
+  async function enviarCodigoDeRecuperacion(correo) {
+    const response = await fetch(`${API_URL}/forgot-password/send-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo })
+    });
+    return response.json();
+  }
+
+  if (forgotPasswordForm) {
+    forgotPasswordForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      limpiarErroresForgot();
+
+      const correo = forgotEmailInput ? forgotEmailInput.value.trim() : '';
+
+      if (!validarCorreo(correo)) {
+        if (forgotEmailGroup) forgotEmailGroup.classList.add('input-error');
+        if (forgotEmailError) forgotEmailError.hidden = false;
+        return;
+      }
+
+      if (forgotSubmitBtn) forgotSubmitBtn.disabled = true;
+
+      try {
+        const data = await enviarCodigoDeRecuperacion(correo);
+
+        if (data.success) {
+          recuperacionCorreo = correo;
+          if (forgotVerifyForm) forgotVerifyForm.reset();
+          forgotCodeGroup?.classList.remove('input-error');
+          if (forgotCodeError) forgotCodeError.hidden = true;
+          if (forgotVerifyEmailLabel) forgotVerifyEmailLabel.textContent = correo;
+          mostrarCardDeAuth(forgotVerifyCard);
+          if (forgotCodeInput) forgotCodeInput.focus();
+        } else {
+          if (forgotGeneralError) {
+            forgotGeneralError.textContent = data.message || 'No existe ninguna cuenta con ese correo.';
+            forgotGeneralError.hidden = false;
+          }
+        }
+      } catch (err) {
+        console.error('Error al enviar el código de recuperación:', err);
+        if (forgotGeneralError) {
+          forgotGeneralError.textContent = 'No se pudo conectar con el servidor. Intenta de nuevo.';
+          forgotGeneralError.hidden = false;
+        }
+      } finally {
+        if (forgotSubmitBtn) forgotSubmitBtn.disabled = false;
+      }
+    });
+  }
+
+  function ponerCargandoVerificacionForgot(estaCargando) {
+    if (!forgotVerifyBtn) return;
+    forgotVerifyBtn.disabled = estaCargando;
+    forgotVerifyBtn.innerHTML = estaCargando
+      ? '<span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Verificando…</span>'
+      : '<span class="btn-label">Verificar código</span><span class="material-icons btn-arrow">arrow_forward</span>';
+  }
+
+  if (forgotVerifyForm) {
+    forgotVerifyForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!recuperacionCorreo) { mostrarCardDeAuth(forgotPasswordCard); return; }
+
+      const codigo = forgotCodeInput ? forgotCodeInput.value.trim() : '';
+      forgotCodeGroup?.classList.remove('input-error');
+      if (forgotCodeError) forgotCodeError.hidden = true;
+
+      if (!codigo) {
+        forgotCodeGroup?.classList.add('input-error');
+        if (forgotCodeError) { forgotCodeError.textContent = 'Ingresa el código que te enviamos.'; forgotCodeError.hidden = false; }
+        return;
+      }
+
+      ponerCargandoVerificacionForgot(true);
+      try {
+        const response = await fetch(`${API_URL}/forgot-password/verify-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo: recuperacionCorreo, codigo })
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+          forgotCodeGroup?.classList.add('input-error');
+          if (forgotCodeError) { forgotCodeError.textContent = data.message || 'El código no es válido.'; forgotCodeError.hidden = false; }
+          return;
+        }
+
+        recuperacionCodigo = codigo;
+        if (resetPasswordForm) resetPasswordForm.reset();
+        [resetPasswordGroup, resetPasswordConfirmGroup].forEach((g) => g && g.classList.remove('input-error'));
+        [resetPasswordError, resetPasswordConfirmError].forEach((e) => e && (e.hidden = true));
+        mostrarCardDeAuth(resetPasswordCard);
+      } catch (err) {
+        console.error('Error al verificar el código de recuperación:', err);
+        alert('No se pudo conectar con el servidor. Intenta de nuevo.');
+      } finally {
+        ponerCargandoVerificacionForgot(false);
+      }
+    });
+
+    if (forgotCodeInput) {
+      forgotCodeInput.addEventListener('input', () => {
+        forgotCodeGroup?.classList.remove('input-error');
+        if (forgotCodeError) forgotCodeError.hidden = true;
+      });
+    }
+  }
+
+  if (resendForgotCodeLink) {
+    resendForgotCodeLink.addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (!recuperacionCorreo || resendForgotCodeLink.classList.contains('link-disabled')) return;
+
+      const data = await enviarCodigoDeRecuperacion(recuperacionCorreo);
+      if (data.success) {
+        alert(`Te reenviamos el código a ${recuperacionCorreo}.`);
+        iniciarEsperaDeReenvio(resendForgotCodeLink, 'Reenviar código');
+      } else {
+        alert(data.message || 'No se pudo reenviar el código.');
+      }
+    });
+  }
+
+  if (backToForgotEmailLink) {
+    backToForgotEmailLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      mostrarCardDeAuth(forgotPasswordCard);
+    });
+  }
+
+  if (toggleResetPasswordBtn && resetPasswordInput) {
+    toggleResetPasswordBtn.addEventListener('click', () => {
+      const oculto = resetPasswordInput.type === 'password';
+      resetPasswordInput.type = oculto ? 'text' : 'password';
+      toggleResetPasswordBtn.setAttribute('aria-pressed', String(oculto));
+      toggleResetPasswordBtn.querySelector('.material-icons').textContent = oculto ? 'visibility_off' : 'visibility';
+    });
+  }
+
+  if (resetPasswordForm) {
+    resetPasswordForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      [resetPasswordGroup, resetPasswordConfirmGroup].forEach((g) => g && g.classList.remove('input-error'));
+      [resetPasswordError, resetPasswordConfirmError].forEach((e) => e && (e.hidden = true));
+
+      const nuevaPass = resetPasswordInput ? resetPasswordInput.value : '';
+      const confirmPass = resetPasswordConfirmInput ? resetPasswordConfirmInput.value : '';
+
+      let esValido = true;
+      if (!nuevaPass || nuevaPass.length < 6) {
+        if (resetPasswordGroup) resetPasswordGroup.classList.add('input-error');
+        if (resetPasswordError) resetPasswordError.hidden = false;
+        esValido = false;
+      }
+      if (nuevaPass !== confirmPass) {
+        if (resetPasswordConfirmGroup) resetPasswordConfirmGroup.classList.add('input-error');
+        if (resetPasswordConfirmError) resetPasswordConfirmError.hidden = false;
+        esValido = false;
+      }
+      if (!esValido || !recuperacionCorreo || !recuperacionCodigo) return;
+
+      if (resetSubmitBtn) resetSubmitBtn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_URL}/forgot-password/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo: recuperacionCorreo, codigo: recuperacionCodigo, nueva_contrasena: nuevaPass })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          window.alert('¡Listo! Tu contraseña se actualizó. Ya puedes iniciar sesión con la nueva.');
+          if (loginEmailInput) loginEmailInput.value = recuperacionCorreo;
+          recuperacionCorreo = null;
+          recuperacionCodigo = null;
+          mostrarCardDeAuth(loginCard);
+        } else {
+          window.alert(data.message || 'No se pudo actualizar la contraseña.');
+          mostrarCardDeAuth(forgotPasswordCard);
+        }
+      } catch (err) {
+        console.error('Error al guardar la contraseña nueva:', err);
+        window.alert('No se pudo conectar con el servidor. Intenta de nuevo.');
+      } finally {
+        if (resetSubmitBtn) resetSubmitBtn.disabled = false;
+      }
+    });
+  }
+
   if (toggleRegisterPasswordBtn && registerPasswordInput) {
     toggleRegisterPasswordBtn.addEventListener('click', () => {
       const oculto = registerPasswordInput.type === 'password';
@@ -786,8 +1201,27 @@ async function registrarReservaEnBaseDatos(pack) {
     if (!registerSubmitBtn) return;
     registerSubmitBtn.disabled = estaCargando;
     registerSubmitBtn.innerHTML = estaCargando
-      ? '<span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Creando cuenta…</span>'
-      : '<span class="btn-label">Crear cuenta</span><span class="material-icons btn-arrow">arrow_forward</span>';
+      ? '<span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Enviando código…</span>'
+      : '<span class="btn-label">Continuar</span><span class="material-icons btn-arrow">arrow_forward</span>';
+  }
+
+  // Datos del registro en curso, guardados mientras se espera el código
+  // (se necesitan de nuevo para "Reenviar código", sin pedirlos otra vez).
+  let registroPendiente = null; // { nombre, correo, contrasena, rol }
+
+  async function enviarCodigoDeRegistro() {
+    if (!registroPendiente) return false;
+    const response = await fetch(`${API_URL}/register/send-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(registroPendiente)
+    });
+    const data = await response.json();
+    if (!data.success) {
+      alert(data.message || 'No se pudo enviar el código.');
+      return false;
+    }
+    return true;
   }
 
   if (registerForm) {
@@ -815,37 +1249,24 @@ async function registrarReservaEnBaseDatos(pack) {
 
       if (!nombreValido || !correoValido || !claveValida || !confirmValida) return;
 
+      registroPendiente = { nombre, correo, contrasena: clave, rol: rolSeleccionado || 'cliente' };
+
       ponerCargandoRegistro(true);
       try {
-        const response = await fetch(`${API_URL}/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre,
-            correo,
-            contrasena: clave,
-            rol: rolSeleccionado || 'cliente'
-          })
-        });
-        const data = await response.json();
+        const enviado = await enviarCodigoDeRegistro();
+        if (!enviado) return;
 
-        if (!data.success) {
-          alert(data.message || 'No se pudo crear la cuenta.');
-          return;
-        }
+        const registerCodeInput = document.getElementById('registerCode');
+        const registerCodeGroup = document.getElementById('registerCodeGroup');
+        const registerCodeError = document.getElementById('registerCodeError');
+        const registerVerifyEmailLabel = document.getElementById('registerVerifyEmailLabel');
+        if (registerCodeInput) registerCodeInput.value = '';
+        if (registerCodeGroup) registerCodeGroup.classList.remove('input-error');
+        if (registerCodeError) registerCodeError.hidden = true;
+        if (registerVerifyEmailLabel) registerVerifyEmailLabel.textContent = correo;
 
-        registerForm.reset();
-
-        if (data.user.rol === 'negocio') {
-          // Cuenta de negocio: falta completar los datos del negocio antes de entrar al panel.
-          usuarioPendienteNegocio = data.user;
-          const responsableInput = document.getElementById('registerBusinessResponsible');
-          if (responsableInput) responsableInput.value = nombre;
-          mostrarCardDeAuth(registerBusinessCard);
-        } else {
-          mostrarCardDeAuth(loginCard);
-          iniciarSesionConDatos(data.user);
-        }
+        mostrarCardDeAuth(registerVerifyCard);
+        if (registerCodeInput) registerCodeInput.focus();
       } catch (err) {
         console.error(err);
         alert('Error conectando al servidor backend.');
@@ -867,6 +1288,123 @@ async function registrarReservaEnBaseDatos(pack) {
         if (registerPasswordConfirmError) registerPasswordConfirmError.hidden = true;
       });
     });
+  }
+
+  // ---- Verificación del código de registro (confirma que el correo es real) ----
+  const registerVerifyForm = document.getElementById('registerVerifyForm');
+  const registerCodeInput = document.getElementById('registerCode');
+  const registerCodeGroup = document.getElementById('registerCodeGroup');
+  const registerCodeError = document.getElementById('registerCodeError');
+  const registerVerifyBtn = document.getElementById('registerVerifyBtn');
+  const resendRegisterCodeLink = document.getElementById('resendRegisterCodeLink');
+  const backToRegisterFormLink = document.getElementById('backToRegisterFormLink');
+
+  function ponerCargandoVerificacionRegistro(estaCargando) {
+    if (!registerVerifyBtn) return;
+    registerVerifyBtn.disabled = estaCargando;
+    registerVerifyBtn.innerHTML = estaCargando
+      ? '<span class="btn-spinner" aria-hidden="true"></span><span class="btn-label">Verificando…</span>'
+      : '<span class="btn-label">Verificar y crear cuenta</span><span class="material-icons btn-arrow">arrow_forward</span>';
+  }
+
+  if (registerVerifyForm) {
+    registerVerifyForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!registroPendiente) { mostrarCardDeAuth(registerCard); return; }
+
+      const codigo = registerCodeInput ? registerCodeInput.value.trim() : '';
+      registerCodeGroup?.classList.remove('input-error');
+      if (registerCodeError) registerCodeError.hidden = true;
+
+      if (!codigo) {
+        registerCodeGroup?.classList.add('input-error');
+        if (registerCodeError) { registerCodeError.textContent = 'Ingresa el código que te enviamos.'; registerCodeError.hidden = false; }
+        return;
+      }
+
+      ponerCargandoVerificacionRegistro(true);
+      try {
+        const response = await fetch(`${API_URL}/register/verify-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo: registroPendiente.correo, codigo })
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+          registerCodeGroup?.classList.add('input-error');
+          if (registerCodeError) { registerCodeError.textContent = data.message || 'El código no es válido.'; registerCodeError.hidden = false; }
+          return;
+        }
+
+        const nombreRegistrado = registroPendiente.nombre;
+        registroPendiente = null;
+        registerForm?.reset();
+        registerVerifyForm.reset();
+
+        if (data.user.rol === 'negocio') {
+          // Cuenta de negocio: falta completar los datos del negocio antes de entrar al panel.
+          usuarioPendienteNegocio = data.user;
+          const responsableInput = document.getElementById('registerBusinessResponsible');
+          if (responsableInput) responsableInput.value = nombreRegistrado;
+          mostrarCardDeAuth(registerBusinessCard);
+        } else {
+          mostrarCardDeAuth(loginCard);
+          iniciarSesionConDatos(data.user);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error conectando al servidor backend.');
+      } finally {
+        ponerCargandoVerificacionRegistro(false);
+      }
+    });
+
+    if (registerCodeInput) {
+      registerCodeInput.addEventListener('input', () => {
+        registerCodeGroup?.classList.remove('input-error');
+        if (registerCodeError) registerCodeError.hidden = true;
+      });
+    }
+  }
+
+  if (resendRegisterCodeLink) {
+    resendRegisterCodeLink.addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (!registroPendiente || resendRegisterCodeLink.classList.contains('link-disabled')) return;
+
+      const enviado = await enviarCodigoDeRegistro();
+      if (enviado) {
+        alert(`Te reenviamos el código a ${registroPendiente.correo}.`);
+        iniciarEsperaDeReenvio(resendRegisterCodeLink, 'Reenviar código');
+      }
+    });
+  }
+
+  if (backToRegisterFormLink) {
+    backToRegisterFormLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      mostrarCardDeAuth(registerCard);
+    });
+  }
+
+  // Deshabilita temporalmente un link de "reenviar código" (30s) para evitar
+  // que manden varios correos seguidos sin querer.
+  function iniciarEsperaDeReenvio(link, textoOriginal, segundos = 30) {
+    if (!link) return;
+    link.classList.add('link-disabled');
+    let restante = segundos;
+    link.textContent = `Reenviar código (${restante}s)`;
+    const intervalo = setInterval(() => {
+      restante -= 1;
+      if (restante <= 0) {
+        clearInterval(intervalo);
+        link.classList.remove('link-disabled');
+        link.textContent = textoOriginal;
+      } else {
+        link.textContent = `Reenviar código (${restante}s)`;
+      }
+    }, 1000);
   }
 
   // ---- Paso 2 del registro de Negocio: datos del negocio ----
@@ -959,6 +1497,7 @@ async function registrarReservaEnBaseDatos(pack) {
 
   function iniciarSesionConDatos(usuario) {
     usuarioLogueado = usuario;
+    guardarSesion(usuario);
 
     // 🏪 Enrutamiento por rol: las cuentas de negocio van al Panel de Admin,
     // el resto de usuarios entra al flujo normal de cliente.
@@ -1042,6 +1581,140 @@ async function registrarReservaEnBaseDatos(pack) {
 
     // Siempre que se refresca la vista de lectura, nos asegura salir del modo edición
     cerrarEdicionPerfilAdmin();
+
+    refrescarEstadoNotificacionesAdmin();
+  }
+
+  // ==========================================================================
+  // 🔔 NOTIFICACIONES PUSH DEL NEGOCIO
+  // ==========================================================================
+  const adminNotifToggle = document.getElementById('adminNotifToggle');
+  const adminNotifStatus = document.getElementById('adminNotifStatus');
+
+  // El navegador necesita la llave pública en formato Uint8Array, no en texto.
+  function claveVapidAUint8Array(claveBase64) {
+    const padding = '='.repeat((4 - (claveBase64.length % 4)) % 4);
+    const base64 = (claveBase64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  function soportaNotificacionesPush() {
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  }
+
+  async function registrarServiceWorker() {
+    if (!('serviceWorker' in navigator)) return null;
+    try {
+      return await navigator.serviceWorker.register('/sw.js');
+    } catch (err) {
+      console.error('No se pudo registrar el service worker:', err);
+      return null;
+    }
+  }
+
+  // Revisa si YA existe una suscripción activa en este navegador y refleja
+  // ese estado en el switch (para que no se desincronice al recargar la app).
+  async function refrescarEstadoNotificacionesAdmin() {
+    if (!adminNotifToggle || !usuarioLogueado) return;
+
+    if (!soportaNotificacionesPush()) {
+      adminNotifToggle.disabled = true;
+      if (adminNotifStatus) adminNotifStatus.textContent = 'Tu navegador no soporta notificaciones push.';
+      return;
+    }
+
+    try {
+      const registration = await registrarServiceWorker();
+      if (!registration) return;
+      const suscripcionActual = await registration.pushManager.getSubscription();
+      adminNotifToggle.checked = !!suscripcionActual && Notification.permission === 'granted';
+    } catch (err) {
+      console.error('Error al revisar suscripción push:', err);
+    }
+  }
+
+  async function activarNotificacionesAdmin() {
+    if (adminNotifStatus) adminNotifStatus.textContent = 'Activando notificaciones...';
+
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted') {
+      if (adminNotifToggle) adminNotifToggle.checked = false;
+      if (adminNotifStatus) adminNotifStatus.textContent = 'No diste permiso de notificaciones en tu navegador, por eso no podemos avisarte de nuevas reservas.';
+      return;
+    }
+
+    const registration = await registrarServiceWorker();
+    if (!registration) {
+      if (adminNotifToggle) adminNotifToggle.checked = false;
+      if (adminNotifStatus) adminNotifStatus.textContent = 'No se pudo activar: falló el registro del service worker.';
+      return;
+    }
+
+    try {
+      const keyResponse = await fetch(`${API_URL}/push/public-key`);
+      const keyData = await keyResponse.json();
+      if (!keyData.success) throw new Error(keyData.message || 'Servidor sin llave VAPID configurada.');
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: claveVapidAUint8Array(keyData.publicKey)
+      });
+
+      const guardarResponse = await fetch(`${API_URL}/push/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usuario_id: usuarioLogueado.id,
+          negocio: usuarioLogueado.negocio,
+          subscription
+        })
+      });
+      const guardarData = await guardarResponse.json();
+
+      if (guardarData.success) {
+        if (adminNotifStatus) adminNotifStatus.textContent = '¡Listo! Te avisaremos con una notificación push apenas te llegue una reserva nueva.';
+      } else {
+        throw new Error(guardarData.message || 'El servidor no pudo guardar la suscripción.');
+      }
+    } catch (err) {
+      console.error('Error al activar notificaciones push:', err);
+      if (adminNotifToggle) adminNotifToggle.checked = false;
+      if (adminNotifStatus) adminNotifStatus.textContent = 'No se pudo activar la notificación. Intenta de nuevo en unos segundos.';
+    }
+  }
+
+  async function desactivarNotificacionesAdmin() {
+    try {
+      const registration = await registrarServiceWorker();
+      if (!registration) return;
+      const suscripcionActual = await registration.pushManager.getSubscription();
+      if (suscripcionActual) {
+        await fetch(`${API_URL}/push/unsubscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: suscripcionActual.endpoint })
+        });
+        await suscripcionActual.unsubscribe();
+      }
+      if (adminNotifStatus) adminNotifStatus.textContent = 'Recibe una notificación push en este dispositivo apenas un cliente reserve uno de tus packs, aunque tengas la app cerrada.';
+    } catch (err) {
+      console.error('Error al desactivar notificaciones push:', err);
+    }
+  }
+
+  if (adminNotifToggle) {
+    adminNotifToggle.addEventListener('change', () => {
+      if (adminNotifToggle.checked) {
+        activarNotificacionesAdmin();
+      } else {
+        desactivarNotificacionesAdmin();
+      }
+    });
   }
 
   // ---- Edición del perfil del negocio ----
@@ -1699,6 +2372,14 @@ async function registrarReservaEnBaseDatos(pack) {
       return;
     }
 
+    // Si la librería de decodificación de QR no cargó (por ejemplo, el archivo
+    // vendor/jsQR.js no llegó al navegador), avisamos de una vez en vez de
+    // dejar que la cámara se abra y nunca detecte nada sin explicación.
+    if (typeof jsQR !== 'function') {
+      alert('No se pudo cargar el lector de códigos QR (jsQR). Revisa tu conexión, recarga la página (Ctrl+F5) e inténtalo de nuevo. Mientras tanto, usa el código manual.');
+      return;
+    }
+
     // Mostrar el modal de inmediato: mientras el navegador pide permiso de
     // cámara puede tardar un instante, y antes no se veía ningún cambio en
     // pantalla (parecía que el botón no hacía nada).
@@ -2139,6 +2820,7 @@ async function registrarReservaEnBaseDatos(pack) {
   function cerrarSesionAdmin() {
     cerrarEscanerAdmin();
     usuarioLogueado = null;
+    borrarSesionGuardada();
     reservasAdminActuales = [];
     setActiveView('login');
     mostrarPantallaDeRol();
@@ -2161,9 +2843,11 @@ if (profileItems.length) {
         if (target === 'reservations' || target === 'history') {
           mostrarBotonVolverReservas('profile');
           if (target === 'history') {
+            guardarTabReservas('historial');
             cargarHistorialDesdeBaseDatos();
             setActiveView('reservations');
           } else {
+            guardarTabReservas('pendientes');
             cargarReservasDesdeBaseDatos();
             setActiveView(target);
           }
@@ -2179,6 +2863,7 @@ if (profileItems.length) {
         
         } else if (target === 'logout') {
           usuarioLogueado = null;
+          borrarSesionGuardada();
           setActiveView('login');
           mostrarPantallaDeRol();
         } else {
@@ -2386,8 +3071,16 @@ if (profileItems.length) {
 
   if (ticketLocationBtn) {
     ticketLocationBtn.addEventListener('click', () => {
-      if (selectedPack && selectedPack.coordinates) {
-        window.open(`https://maps.google.com/?q=${selectedPack.coordinates}`, '_blank', 'noopener,noreferrer');
+      // Antes esto dependía de "selectedPack", que solo existe si se reservó
+      // en esta misma sesión desde el Home. Al reabrir una reserva ya
+      // guardada desde "Mis reservas", selectedPack quedaba vacío y el botón
+      // no hacía nada. Ahora usamos siempre las coordenadas del ticket que
+      // está visible en pantalla en este momento.
+      const coords = ticketCoordenadasActuales || (selectedPack && selectedPack.coordinates);
+      if (coords) {
+        window.open(`https://maps.google.com/?q=${coords}`, '_blank', 'noopener,noreferrer');
+      } else {
+        window.alert('No tenemos la ubicación exacta guardada para esta reserva.');
       }
     });
   }
@@ -2418,6 +3111,7 @@ if (profileItems.length) {
 
       // NUEVO: Al guardar, traemos las reservas actualizadas de la BD y nos mueve a la pestaña de reservas
       mostrarBotonVolverReservas('home');
+      guardarTabReservas('pendientes');
       cargarReservasDesdeBaseDatos();
       setActiveView('reservations');
 
@@ -2431,6 +3125,7 @@ if (navItems.length) {
         if (target === 'home' || target === 'reservations' || target === 'profile') {
           if (target === 'reservations') {
             mostrarBotonVolverReservas('home');
+            guardarTabReservas('pendientes');
             // 🌟 Fuerza la descarga limpia de reservas de MySQL al hacer clic en el menú
             cargarReservasDesdeBaseDatos(); 
           }
@@ -2439,6 +3134,51 @@ if (navItems.length) {
       });
     });
 }
+// 🌟 CANCELAR RESERVA ACTIVA (botón "❌ Cancelar" en la boleta)
+async function cancelarReservaActiva() {
+    if (!reservaActivaId) return;
+
+    const confirmado = confirm('¿Seguro que quieres cancelar esta reserva? Esta acción no se puede deshacer.');
+    if (!confirmado) return;
+
+    if (cancelReservationBtn) {
+      cancelReservationBtn.disabled = true;
+      cancelReservationBtn.textContent = 'Cancelando...';
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/reservas/${reservaActivaId}/cancelar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Tu reserva fue cancelada.');
+        reservaActivaId = null;
+        if (ticketPickupActions) ticketPickupActions.hidden = true;
+        cargarSamipacksDesdeBD(); // refresca stock disponible
+        guardarTabReservas('pendientes');
+        cargarReservasDesdeBaseDatos(); // refresca la lista de reservas activas
+        setActiveView('reservations');
+      } else {
+        alert(data.message || 'No se pudo cancelar la reserva.');
+      }
+    } catch (err) {
+      console.error('Error al cancelar reserva:', err);
+      alert('Error de conexión al intentar cancelar la reserva.');
+    } finally {
+      if (cancelReservationBtn) {
+        cancelReservationBtn.disabled = false;
+        cancelReservationBtn.textContent = '❌ Cancelar';
+      }
+    }
+  }
+
+  if (cancelReservationBtn) {
+    cancelReservationBtn.addEventListener('click', cancelarReservaActiva);
+  }
+
 async function cargarReservasDesdeBaseDatos() {
     const idUsuario = obtenerIdUsuarioValido();
     const listaReservasContenedor = document.querySelector('.reservations-screen'); 
@@ -2520,6 +3260,17 @@ async function cargarReservasDesdeBaseDatos() {
             if (ticketQr) {
               ticketQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${reservaObjeto.qr_data}`;
             }
+            pintarDatosNegocioEnTicket({
+              direccion: reservaObjeto.direccion_negocio,
+              categoria: reservaObjeto.categoria_negocio || reservaObjeto.categoria,
+              horario: reservaObjeto.horario_negocio,
+              telefono: reservaObjeto.telefono_negocio
+            });
+            ticketCoordenadasActuales = reservaObjeto.coordenadas_negocio || null;
+            // Estas tarjetas solo salen de la lista de reservas "Pendiente de recoger",
+            // así que siempre se pueden cancelar desde aquí.
+            reservaActivaId = reservaObjeto.id;
+            mostrarAccionesBoletaPendiente();
             setActiveView('ticket');
           });
         });
