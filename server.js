@@ -166,9 +166,16 @@ const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
 
 let mailTransporter = null;
 if (gmailUser && gmailAppPassword) {
+    // Antes usábamos { service: 'gmail' }, que internamente conecta por el
+    // puerto 465 (SSL). En Render eso daba "Connection timeout" (ETIMEDOUT).
+    // Forzamos aquí el puerto 587 con STARTTLS, que en muchos hosts cloud
+    // tiene mejor suerte saliendo hacia smtp.gmail.com.
     mailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: gmailUser, pass: gmailAppPassword }
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // STARTTLS: la conexión empieza sin cifrar y luego se actualiza a TLS
+        auth: { user: gmailUser, pass: gmailAppPassword },
+        connectionTimeout: 10000 // falla rápido (10s) en vez de colgarse mucho tiempo
     });
 } else {
     console.warn('⚠️ Faltan GMAIL_USER / GMAIL_APP_PASSWORD en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
