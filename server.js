@@ -10,10 +10,10 @@ const webpush = require('web-push');
 // devuelve a veces una IP IPv4 y a veces una IPv6 para smtp.gmail.com, y la
 // ruta de red de Render hacia esa IPv6 no funciona, así que a veces
 // funcionaba y a veces no, dependiendo de qué IP tocara en ese momento.
-// Ahora usamos Brevo, que envía el correo con una llamada HTTPS normal (el
-// mismo tipo de conexión que carga cualquier página web) en vez de abrir una
-// conexión SMTP directa a una IP de Google, así que no depende de esa
-// variabilidad de red.)
+// Luego pasamos a Brevo (llamada HTTPS normal en vez de SMTP directo), pero
+// Brevo retiene el envío en cuentas nuevas hasta activarlas manualmente
+// (error 403 "SMTP account is not yet activated"). Ahora usamos SendGrid,
+// mismo esquema de API HTTP, sin ese bloqueo.)
 const crypto = require('crypto');
 
 const app = express();
@@ -159,21 +159,27 @@ function notificarNuevaReservaAlNegocio(negocio, payload) {
 }
 
 // ==========================================================================
-// 📧 ENVÍO DE CORREOS (Brevo, vía API HTTP)
+// 📧 ENVÍO DE CORREOS (SendGrid, vía API HTTP)
 // ==========================================================================
 // Se usa para dos cosas: confirmar que el correo del registro existe/
 // funciona, y para el código de recuperación de contraseña.
 //
-// BREVO_API_KEY se genera gratis en https://app.brevo.com/settings/keys/api
-// (Settings > SMTP & API > API Keys). BREVO_SENDER_EMAIL debe ser un correo
-// que hayas verificado en Brevo (Settings > Senders, Domains, IPs > Senders
-// > Add a sender; te llega un código de 6 dígitos a ese correo para
-// confirmarlo) — puede ser tu propio Gmail, no hace falta dominio propio.
-const brevoApiKey = process.env.BREVO_API_KEY;
-const brevoSenderEmail = process.env.BREVO_SENDER_EMAIL;
+// (Antes usábamos Brevo. Cuentas nuevas de Brevo pueden quedar retenidas
+// por su filtro antifraude —error 403 "SMTP account is not yet activated"—
+// hasta que ellos la activan manualmente. SendGrid no aplicó ese bloqueo
+// en pruebas, así que cambiamos de proveedor sin tocar el resto del flujo:
+// register/forgot-password llaman igual a enviarCorreoConCodigo().)
+//
+// SENDGRID_API_KEY se genera gratis en https://app.sendgrid.com/settings/api_keys
+// (crea una key con permiso "Mail Send" al menos). SENDGRID_SENDER_EMAIL debe
+// ser un correo verificado en SendGrid (Settings > Sender Authentication >
+// Verify a Single Sender; te llega un correo de confirmación a esa
+// dirección) — puede ser tu propio Gmail, no hace falta dominio propio.
+const sendgridApiKey = process.env.SENDGRID_API_KEY;
+const sendgridSenderEmail = process.env.SENDGRID_SENDER_EMAIL;
 
-if (!brevoApiKey || !brevoSenderEmail) {
-    console.warn('⚠️ Faltan BREVO_API_KEY / BREVO_SENDER_EMAIL en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
+if (!sendgridApiKey || !sendgridSenderEmail) {
+    console.warn('⚠️ Faltan SENDGRID_API_KEY / SENDGRID_SENDER_EMAIL en el .env: no se podrán enviar correos de verificación (registro y recuperar contraseña quedarán desactivados).');
 }
 
 // Código numérico de 6 dígitos (con ceros a la izquierda si hace falta, ej. "004821")
@@ -182,41 +188,45 @@ function generarCodigoVerificacion() {
 }
 
 async function enviarCorreoConCodigo({ destinatario, asunto, tituloHtml, textoHtml, codigo }) {
-    if (!brevoApiKey || !brevoSenderEmail) {
-        throw new Error('El servidor de correo no está configurado (faltan BREVO_API_KEY / BREVO_SENDER_EMAIL).');
+    if (!sendgridApiKey || !sendgridSenderEmail) {
+        throw new Error('El servidor de correo no está configurado (faltan SENDGRID_API_KEY / SENDGRID_SENDER_EMAIL).');
     }
 
-    const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
+    const respuesta = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
-            'api-key': brevoApiKey,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Authorization': `Bearer ${sendgridApiKey}`,
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            sender: { name: 'SamiPacks', email: brevoSenderEmail },
-            to: [{ email: destinatario }],
+            personalizations: [{ to: [{ email: destinatario }] }],
+            from: { name: 'SamiPacks', email: sendgridSenderEmail },
             subject: asunto,
-            htmlContent: `
-                <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #2b2b2b;">
-                    <h2 style="color: #4caf50; margin-bottom: 4px;">SamiPacks</h2>
-                    <h3 style="margin-top: 0;">${tituloHtml}</h3>
-                    <p>${textoHtml}</p>
-                    <div style="background: #f2f7f2; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
-                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2e7d32;">${codigo}</span>
+            content: [{
+                type: 'text/html',
+                value: `
+                    <div style="font-family: Arial, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #2b2b2b;">
+                        <h2 style="color: #4caf50; margin-bottom: 4px;">SamiPacks</h2>
+                        <h3 style="margin-top: 0;">${tituloHtml}</h3>
+                        <p>${textoHtml}</p>
+                        <div style="background: #f2f7f2; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
+                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2e7d32;">${codigo}</span>
+                        </div>
+                        <p style="font-size: 13px; color: #777;">Este código vence en 10 minutos. Si tú no solicitaste esto, puedes ignorar este correo.</p>
                     </div>
-                    <p style="font-size: 13px; color: #777;">Este código vence en 10 minutos. Si tú no solicitaste esto, puedes ignorar este correo.</p>
-                </div>
-            `
+                `
+            }]
         })
     });
 
+    // SendGrid responde 202 sin cuerpo cuando todo sale bien; si algo falla
+    // devuelve 4xx/5xx con un JSON de errores en el body.
     if (!respuesta.ok) {
         const detalle = await respuesta.text().catch(() => '');
-        throw new Error(`Brevo respondió ${respuesta.status}: ${detalle}`);
+        throw new Error(`SendGrid respondió ${respuesta.status}: ${detalle}`);
     }
 
-    return respuesta.json();
+    return { success: true };
 }
 
 // Limpia códigos previos no usados del mismo correo+tipo (evita que queden
