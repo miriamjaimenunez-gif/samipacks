@@ -1,0 +1,235 @@
+{
+  "info": {
+    "name": "SamiPacks API",
+    "description": "Pruebas de API (integración) para el backend de SamiPacks. Cada request incluye asserts con pm.test() que validan status code y forma de la respuesta, según lo documentado en specs/001-samipacks-core/spec.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "clienteCorreo", "value": "" },
+    { "key": "clienteContrasena", "value": "Test1234!" },
+    { "key": "clienteId", "value": "" },
+    { "key": "samipackId", "value": "" },
+    { "key": "reservaId", "value": "" },
+    { "key": "codigoAlfanumerico", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Catálogo",
+      "item": [
+        {
+          "name": "GET /api/samipacks (feed público)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/samipacks"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde success true y arreglo de packs', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.success).to.eql(true);",
+                  "  pm.expect(data.packs).to.be.an('array');",
+                  "});",
+                  "pm.test('Todos los packs listados tienen stock > 0', () => {",
+                  "  const data = pm.response.json();",
+                  "  data.packs.forEach((p) => pm.expect(p.remainingPacks).to.be.above(0));",
+                  "  if (data.packs.length > 0) {",
+                  "    pm.collectionVariables.set('samipackId', data.packs[0].id);",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Reservas",
+      "item": [
+        {
+          "name": "POST /api/reservas (crear reserva)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{clienteId}},\n  \"negocio\": \"Panadería Don José\",\n  \"samipack_id\": {{samipackId}},\n  \"samipack_nombre\": \"Pack Sorpresa\",\n  \"categoria\": \"Panadería\",\n  \"cantidad\": 1,\n  \"precio_total\": 9.9,\n  \"codigo_alfanumerico\": \"SP-TESTQA\",\n  \"qr_data\": \"SamiPacks-SP-TESTQA\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 al crear reserva con stock disponible', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde success true e insertId', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.success).to.eql(true);",
+                  "  pm.expect(data.insertId).to.be.a('number');",
+                  "  pm.collectionVariables.set('reservaId', data.insertId);",
+                  "  pm.collectionVariables.set('codigoAlfanumerico', 'SP-TESTQA');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/reservas (rechaza si no hay stock)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/reservas",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": {{clienteId}},\n  \"negocio\": \"Panadería Don José\",\n  \"samipack_id\": {{samipackId}},\n  \"samipack_nombre\": \"Pack Sorpresa\",\n  \"categoria\": \"Panadería\",\n  \"cantidad\": 999999,\n  \"precio_total\": 9.9,\n  \"codigo_alfanumerico\": \"SP-NOSTOCK\",\n  \"qr_data\": \"SamiPacks-SP-NOSTOCK\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 cuando la cantidad excede el stock', () => pm.response.to.have.status(409));",
+                  "pm.test('Responde success false', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.success).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/reservas/:usuario_id (pendientes)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/reservas/{{clienteId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye la reserva recién creada como Pendiente de recoger', () => {",
+                  "  const data = pm.response.json();",
+                  "  const encontrada = data.reservas.find((r) => r.id === pm.collectionVariables.get('reservaId'));",
+                  "  pm.expect(encontrada).to.not.be.undefined;",
+                  "  pm.expect(encontrada.estado).to.eql('Pendiente de recoger');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/admin/confirmar-recogida-codigo (confirma recojo)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admin/confirmar-recogida-codigo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoAlfanumerico}}\",\n  \"negocio\": \"Panadería Don José\",\n  \"admin_id\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 al confirmar un código válido y pendiente', () => pm.response.to.have.status(200));",
+                  "pm.test('Responde success true', () => {",
+                  "  pm.expect(pm.response.json().success).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/admin/confirmar-recogida-codigo (rechaza doble confirmación)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admin/confirmar-recogida-codigo",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoAlfanumerico}}\",\n  \"negocio\": \"Panadería Don José\",\n  \"admin_id\": 1\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 si el código ya fue confirmado antes', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Cuentas",
+      "item": [
+        {
+          "name": "POST /api/login (credenciales incorrectas)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"no-existe@samipacks.com\",\n  \"contrasena\": \"claveIncorrecta\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 con credenciales inválidas', () => pm.response.to.have.status(401));",
+                  "pm.test('La respuesta NUNCA incluye el campo contrasena', () => {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.user).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/register/send-code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/register/send-code",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{clienteCorreo}}\",\n  \"nombre\": \"Usuario QA\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 al pedir código de registro', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

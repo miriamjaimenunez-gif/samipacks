@@ -1,0 +1,14 @@
+---
+description: Reglas de desarrollo basado en especificaciones (Spec-Driven Development)
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Reglas del Agente - Spec Kit
+
+1. **Constitución**: Consulta siempre `.specify/constitution.md` para respetar las directivas del proyecto.
+2. **Especificaciones y Tareas**:
+   - Antes de escribir código, revisa la especificación activa en `specs/001-samipacks-core/spec.md`.
+   - Consulta el plan de arquitectura en `plan.md`.
+   - Ejecuta las tareas pendientes definidas en `tasks.md`.
+3. **Flujo de Trabajo**: Valida tus cambios contra los archivos en `tests/postman/` cuando corresponda.

@@ -1,0 +1,1 @@
+Lee el archivo `plan.md` y desglósalo en una lista ordenada de tareas paso a paso dentro de `tasks.md`.
