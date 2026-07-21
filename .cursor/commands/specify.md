@@ -1,1 +1,0 @@
-Usa la plantilla de `.specify/` para redactar o actualizar la especificación funcional en `specs/` basándote en lo que pida el usuario. Describe QUÉ se construye y POR QUÉ.
